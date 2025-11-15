@@ -73,6 +73,37 @@ portMUX_TYPE tachMux = portMUX_INITIALIZER_UNLOCKED;
 void updateDisplay(const SensorReadings& readings);
 void updateTelemetryCharacteristic(const SensorReadings& readings);
 
+using ValueFormatter = void (*)(const SensorReadings&, char*, size_t);
+
+struct MenuPage {
+    const char* title;
+    const char* units;
+    ValueFormatter formatValue;
+};
+
+void formatRpmValue(const SensorReadings& readings, char* buffer, size_t len);
+void formatWaterTempValue(const SensorReadings& readings, char* buffer, size_t len);
+void formatOilPressureValue(const SensorReadings& readings, char* buffer, size_t len);
+void formatHandbrakeValue(const SensorReadings& readings, char* buffer, size_t len);
+
+// Add new entries here to expose more menu pages (handy for a rotary encoder).
+constexpr MenuPage MENU_PAGES[] = {
+    {"Engine", "rpm", formatRpmValue},
+    {"Water", "\xB0C", formatWaterTempValue},
+    {"Oil", "psi", formatOilPressureValue},
+    {"Handbrake", nullptr, formatHandbrakeValue},
+};
+
+constexpr size_t MENU_PAGE_COUNT = sizeof(MENU_PAGES) / sizeof(MENU_PAGES[0]);
+size_t activeMenuPage = 0;
+
+void setActiveMenuPage(size_t index) {
+    if (MENU_PAGE_COUNT == 0) {
+        return;
+    }
+    activeMenuPage = index % MENU_PAGE_COUNT;
+}
+
 float analogReadVoltage(uint8_t pin) {
     uint16_t raw = analogRead(pin);
     return (static_cast<float>(raw) / static_cast<float>(ADC_RESOLUTION)) * ANALOG_REFERENCE_V;
@@ -145,6 +176,58 @@ uint16_t sampleRpm() {
     return static_cast<uint16_t>(rpm + 0.5f);
 }
 
+void drawCenteredText(const char* text, int16_t centerY, uint8_t textSize, uint16_t color) {
+    if (!text) {
+        return;
+    }
+
+    tft.setTextSize(textSize);
+    int16_t x1, y1;
+    uint16_t w, h;
+    tft.getTextBounds(text, 0, 0, &x1, &y1, &w, &h);
+    int16_t x = DISPLAY_CENTER_X - static_cast<int16_t>(w / 2);
+    int16_t y = centerY - static_cast<int16_t>(h / 2);
+    tft.setCursor(x, y);
+    tft.setTextColor(color);
+    tft.print(text);
+}
+
+void drawPageIndicators(size_t selectedIndex) {
+    if (MENU_PAGE_COUNT <= 1) {
+        return;
+    }
+
+    const int16_t indicatorY = DISPLAY_CENTER_Y + DISPLAY_RADIUS - 25;
+    const int16_t spacing = 18;
+    const int16_t totalWidth = (MENU_PAGE_COUNT - 1) * spacing;
+    const int16_t startX = DISPLAY_CENTER_X - totalWidth / 2;
+
+    for (size_t i = 0; i < MENU_PAGE_COUNT; ++i) {
+        uint16_t color = (i == selectedIndex) ? GC9A01A_WHITE : GC9A01A_DARKGREY;
+        uint8_t radius = (i == selectedIndex) ? 5 : 3;
+        tft.fillCircle(startX + static_cast<int16_t>(i) * spacing, indicatorY, radius, color);
+    }
+}
+
+void drawMenuPage(const MenuPage& page, const SensorReadings& readings) {
+    tft.fillScreen(GC9A01A_BLACK);
+    tft.fillCircle(DISPLAY_CENTER_X, DISPLAY_CENTER_Y, DISPLAY_RADIUS, GC9A01A_BLACK);
+    tft.drawCircle(DISPLAY_CENTER_X, DISPLAY_CENTER_Y, DISPLAY_RADIUS, GC9A01A_DARKGREY);
+    tft.drawCircle(DISPLAY_CENTER_X, DISPLAY_CENTER_Y, DISPLAY_RADIUS - 2, GC9A01A_DARKGREY);
+
+    drawCenteredText(page.title, DISPLAY_CENTER_Y - 70, 2, GC9A01A_CYAN);
+
+    char valueBuffer[32] = {0};
+    page.formatValue(readings, valueBuffer, sizeof(valueBuffer));
+    drawCenteredText(valueBuffer, DISPLAY_CENTER_Y - 5, 4, GC9A01A_WHITE);
+
+    if (page.units && page.units[0] != '\0') {
+        drawCenteredText(page.units, DISPLAY_CENTER_Y + 45, 2, GC9A01A_LIGHTGREY);
+    }
+
+    drawPageIndicators(activeMenuPage);
+}
+
 void initDisplay() {
     tft.begin();
     tft.setRotation(0);
@@ -154,50 +237,14 @@ void initDisplay() {
         pinMode(TFT_BACKLIGHT_PIN, OUTPUT);
         digitalWrite(TFT_BACKLIGHT_PIN, HIGH);
     }
-
-    tft.setTextColor(GC9A01A_WHITE);
-    tft.setTextSize(2);
-    tft.setCursor(25, 10);
-    tft.print("Miata Telemetry");
-    tft.drawFastHLine(10, 40, 220, GC9A01A_DARKGREY);
-}
-
-void drawDataRow(int16_t top, const char* label, const char* value) {
-    const int16_t height = 45;
-    tft.fillRoundRect(10, top, 220, height, 8, GC9A01A_BLACK);
-    tft.drawRoundRect(10, top, 220, height, 8, GC9A01A_DARKGREY);
-
-    tft.setTextColor(GC9A01A_WHITE);
-    tft.setTextSize(2);
-    tft.setCursor(18, top + 15);
-    tft.print(label);
-
-    tft.setTextSize(3);
-    tft.setCursor(18, top + 28);
-    tft.print(value);
 }
 
 void updateDisplay(const SensorReadings& readings) {
-    char buffer[32];
-
-    snprintf(buffer, sizeof(buffer), "%4u rpm", readings.rpm);
-    drawDataRow(55, "Engine", buffer);
-
-    if (isnan(readings.waterTempC)) {
-        snprintf(buffer, sizeof(buffer), "--.- C");
-    } else {
-        snprintf(buffer, sizeof(buffer), "%5.1f C", readings.waterTempC);
+    if (MENU_PAGE_COUNT == 0) {
+        return;
     }
-    drawDataRow(105, "Water", buffer);
-
-    if (isnan(readings.oilPressurePsi)) {
-        snprintf(buffer, sizeof(buffer), "--.- psi");
-    } else {
-        snprintf(buffer, sizeof(buffer), "%5.1f psi", readings.oilPressurePsi);
-    }
-    drawDataRow(155, "Oil", buffer);
-
-    drawDataRow(205, "Handbrake", readings.handbrakeEngaged ? "ENGAGED" : "Released");
+    const MenuPage& page = MENU_PAGES[activeMenuPage];
+    drawMenuPage(page, readings);
 }
 
 void updateTelemetryCharacteristic(const SensorReadings& readings) {
@@ -211,6 +258,31 @@ void updateTelemetryCharacteristic(const SensorReadings& readings) {
 
     pTelemetryCharacteristic->setValue(payload);
     pTelemetryCharacteristic->notify();
+}
+
+void formatRpmValue(const SensorReadings& readings, char* buffer, size_t len) {
+    snprintf(buffer, len, "%4u", readings.rpm);
+}
+
+void formatWaterTempValue(const SensorReadings& readings, char* buffer, size_t len) {
+    if (isnan(readings.waterTempC)) {
+        snprintf(buffer, len, "--.-");
+    } else {
+        snprintf(buffer, len, "%5.1f", readings.waterTempC);
+    }
+}
+
+void formatOilPressureValue(const SensorReadings& readings, char* buffer, size_t len) {
+    if (isnan(readings.oilPressurePsi)) {
+        snprintf(buffer, len, "--.-");
+    } else {
+        snprintf(buffer, len, "%5.1f", readings.oilPressurePsi);
+    }
+}
+
+void formatHandbrakeValue(const SensorReadings& readings, char* buffer, size_t len) {
+    const char* text = readings.handbrakeEngaged ? "ENGAGED" : "Released";
+    snprintf(buffer, len, "%s", text);
 }
 
 class MyServerCallbacks : public BLEServerCallbacks {
@@ -280,6 +352,7 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(TACH_PIN), handleTachPulse, RISING);
 
     initDisplay();
+    setActiveMenuPage(0);
     updateDisplay(currentReadings);
 
     Serial.println("Starting BLE...");
