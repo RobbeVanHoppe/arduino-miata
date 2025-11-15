@@ -20,6 +20,8 @@ constexpr int TFT_CS_PIN = 5;
 constexpr int TFT_DC_PIN = 16;
 constexpr int TFT_RST_PIN = 17;
 constexpr int TFT_BACKLIGHT_PIN = 4;
+constexpr int TFT_SDA_PIN = 23;  // GC9A01 data/MOSI
+constexpr int TFT_SCL_PIN = 18;  // GC9A01 clock/SCK
 
 // Analog sensor calibration (change to match your specific senders)
 constexpr float ANALOG_REFERENCE_V = 3.3f;
@@ -272,6 +274,8 @@ void setup() {
     pinMode(TACH_PIN, INPUT_PULLUP);
     analogReadResolution(12);
     analogSetAttenuation(ADC_11db);
+
+    SPI.begin(TFT_SCL_PIN, -1, TFT_SDA_PIN, TFT_CS_PIN);
 
     attachInterrupt(digitalPinToInterrupt(TACH_PIN), handleTachPulse, RISING);
 
