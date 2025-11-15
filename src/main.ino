@@ -8,6 +8,7 @@
 #include <SPI.h>
 #include <math.h>
 #include <cstring>
+#include <algorithm>
 
 // GPIO configuration – adjust to match your wiring
 constexpr int LIGHTS_PIN = 2;
@@ -27,7 +28,26 @@ constexpr int16_t DISPLAY_WIDTH = 240;
 constexpr int16_t DISPLAY_HEIGHT = 240;
 constexpr int16_t DISPLAY_CENTER_X = DISPLAY_WIDTH / 2;
 constexpr int16_t DISPLAY_CENTER_Y = DISPLAY_HEIGHT / 2;
-constexpr int16_t DISPLAY_RADIUS = 115;
+constexpr int16_t DISPLAY_RADIUS = DISPLAY_WIDTH / 2 - 5;
+constexpr int16_t VALUE_TEXT_Y = DISPLAY_CENTER_Y - 5;
+constexpr uint8_t TITLE_TEXT_SIZE = 2;
+constexpr uint8_t VALUE_TEXT_SIZE = 4;
+constexpr uint8_t UNIT_TEXT_SIZE = 2;
+constexpr int16_t VALUE_TEXT_PADDING = 8;
+
+struct TextBounds {
+    int16_t x;
+    int16_t y;
+    uint16_t w;
+    uint16_t h;
+};
+
+static TextBounds lastValueBounds = {0, 0, 0, 0};
+static bool lastValueBoundsValid = false;
+
+void resetValueTextBounds() {
+    lastValueBoundsValid = false;
+}
 
 // Analog sensor calibration (change to match your specific senders)
 constexpr float ANALOG_REFERENCE_V = 3.3f;
@@ -198,6 +218,52 @@ void drawCenteredText(const char* text, int16_t centerY, uint8_t textSize, uint1
     tft.print(text);
 }
 
+void drawMenuValueText(const char* text) {
+    if (!text) {
+        return;
+    }
+
+    tft.setTextSize(VALUE_TEXT_SIZE);
+    int16_t x1, y1;
+    uint16_t w, h;
+    tft.getTextBounds(text, 0, 0, &x1, &y1, &w, &h);
+    TextBounds bounds;
+    bounds.w = w;
+    bounds.h = h;
+    bounds.x = DISPLAY_CENTER_X - static_cast<int16_t>(bounds.w / 2);
+    bounds.y = VALUE_TEXT_Y - static_cast<int16_t>(bounds.h / 2);
+
+    auto clearRegion = [&](int16_t x, int16_t y, int16_t width, int16_t height) {
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        tft.fillRect(x, y, width, height, GC9A01A_BLACK);
+    };
+
+    if (lastValueBoundsValid) {
+        const int16_t clearLeft = std::min(bounds.x, lastValueBounds.x) - VALUE_TEXT_PADDING;
+        const int16_t clearTop = std::min(bounds.y, lastValueBounds.y) - VALUE_TEXT_PADDING;
+        const int16_t clearRight = std::max(static_cast<int16_t>(bounds.x + bounds.w), static_cast<int16_t>(lastValueBounds.x + lastValueBounds.w)) + VALUE_TEXT_PADDING;
+        const int16_t clearBottom = std::max(static_cast<int16_t>(bounds.y + bounds.h), static_cast<int16_t>(lastValueBounds.y + lastValueBounds.h)) + VALUE_TEXT_PADDING;
+        clearRegion(clearLeft,
+                    clearTop,
+                    clearRight - clearLeft,
+                    clearBottom - clearTop);
+    } else {
+        clearRegion(bounds.x - VALUE_TEXT_PADDING,
+                    bounds.y - VALUE_TEXT_PADDING,
+                    static_cast<int16_t>(bounds.w) + VALUE_TEXT_PADDING * 2,
+                    static_cast<int16_t>(bounds.h) + VALUE_TEXT_PADDING * 2);
+    }
+
+    tft.setCursor(bounds.x, bounds.y);
+    tft.setTextColor(GC9A01A_WHITE, GC9A01A_BLACK);
+    tft.print(text);
+
+    lastValueBounds = bounds;
+    lastValueBoundsValid = true;
+}
+
 void drawPageIndicators(size_t selectedIndex) {
     if (MENU_PAGE_COUNT <= 1) {
         return;
@@ -215,23 +281,19 @@ void drawPageIndicators(size_t selectedIndex) {
     }
 }
 
-void drawMenuPage(const MenuPage& page, const SensorReadings& readings) {
+void drawMenuPageBackground(const MenuPage& page, size_t pageIndex) {
     tft.fillScreen(GC9A01A_BLACK);
     tft.fillCircle(DISPLAY_CENTER_X, DISPLAY_CENTER_Y, DISPLAY_RADIUS, GC9A01A_BLACK);
     tft.drawCircle(DISPLAY_CENTER_X, DISPLAY_CENTER_Y, DISPLAY_RADIUS, GC9A01A_DARKGREY);
     tft.drawCircle(DISPLAY_CENTER_X, DISPLAY_CENTER_Y, DISPLAY_RADIUS - 2, GC9A01A_DARKGREY);
 
-    drawCenteredText(page.title, DISPLAY_CENTER_Y - 70, 2, GC9A01A_CYAN);
-
-    char valueBuffer[32] = {0};
-    page.formatValue(readings, valueBuffer, sizeof(valueBuffer));
-    drawCenteredText(valueBuffer, DISPLAY_CENTER_Y - 5, 4, GC9A01A_WHITE);
+    drawCenteredText(page.title, DISPLAY_CENTER_Y - 70, TITLE_TEXT_SIZE, GC9A01A_CYAN);
 
     if (page.units && page.units[0] != '\0') {
-        drawCenteredText(page.units, DISPLAY_CENTER_Y + 45, 2, GC9A01A_LIGHTGREY);
+        drawCenteredText(page.units, DISPLAY_CENTER_Y + 45, UNIT_TEXT_SIZE, GC9A01A_LIGHTGREY);
     }
 
-    drawPageIndicators(activeMenuPage);
+    drawPageIndicators(pageIndex);
 }
 
 void initDisplay() {
@@ -249,8 +311,31 @@ void updateDisplay(const SensorReadings& readings) {
     if (MENU_PAGE_COUNT == 0) {
         return;
     }
-    const MenuPage& page = MENU_PAGES[activeMenuPage];
-    drawMenuPage(page, readings);
+    const size_t pageIndex = activeMenuPage;
+    const MenuPage& page = MENU_PAGES[pageIndex];
+
+    static bool backgroundDrawn = false;
+    static size_t lastPageIndex = 0;
+    static bool lastValueValid = false;
+    static char lastValueBuffer[32] = {0};
+
+    if (!backgroundDrawn || lastPageIndex != pageIndex) {
+        drawMenuPageBackground(page, pageIndex);
+        backgroundDrawn = true;
+        lastPageIndex = pageIndex;
+        lastValueValid = false;
+        resetValueTextBounds();
+    }
+
+    char valueBuffer[32] = {0};
+    page.formatValue(readings, valueBuffer, sizeof(valueBuffer));
+
+    if (!lastValueValid || strncmp(lastValueBuffer, valueBuffer, sizeof(lastValueBuffer)) != 0) {
+        drawMenuValueText(valueBuffer);
+        strncpy(lastValueBuffer, valueBuffer, sizeof(lastValueBuffer));
+        lastValueBuffer[sizeof(lastValueBuffer) - 1] = '\0';
+        lastValueValid = true;
+    }
 }
 
 void updateTelemetryCharacteristic(const SensorReadings& readings) {
