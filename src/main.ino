@@ -23,12 +23,6 @@ constexpr int TFT_BACKLIGHT_PIN = 4;
 constexpr int TFT_SDA_PIN = 23;  // GC9A01 data/MOSI
 constexpr int TFT_SCL_PIN = 18;  // GC9A01 clock/SCK
 
-constexpr int16_t DISPLAY_WIDTH = 240;
-constexpr int16_t DISPLAY_HEIGHT = 240;
-constexpr int16_t DISPLAY_CENTER_X = DISPLAY_WIDTH / 2;
-constexpr int16_t DISPLAY_CENTER_Y = DISPLAY_HEIGHT / 2;
-constexpr int16_t DISPLAY_RADIUS = 115;
-
 // Analog sensor calibration (change to match your specific senders)
 constexpr float ANALOG_REFERENCE_V = 3.3f;
 constexpr int ADC_RESOLUTION = 4095;
