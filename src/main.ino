@@ -24,7 +24,6 @@ constexpr int TFT_BACKLIGHT_PIN = 4;
 constexpr int TFT_SDA_PIN = 23;  // GC9A01 data/MOSI
 constexpr int TFT_SCL_PIN = 18;  // GC9A01 clock/SCK
 
-// Display geometry (GC9A01A is a 240x240 round TFT)
 constexpr int16_t DISPLAY_WIDTH = 240;
 constexpr int16_t DISPLAY_HEIGHT = 240;
 constexpr int16_t DISPLAY_CENTER_X = DISPLAY_WIDTH / 2;
@@ -418,6 +417,9 @@ class MyCallbacks : public BLECharacteristicCallbacks {
             handleWindowsCommand(true);
         } else if (rxValue == "WINDOWS:DOWN") {
             handleWindowsCommand(false);
+        } else if (rxValue == "MENU") {
+            if (sizeof(MENU_PAGES) == activeMenuPage + 1) activeMenuPage = 0;
+            setActiveMenuPage(activeMenuPage + 1);
         } else {
             Serial.println("Unknown command");
         }
@@ -425,7 +427,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 };
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
     delay(1000);
     Serial.println("Starting Miata brain...");
 
