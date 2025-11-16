@@ -50,12 +50,10 @@ constexpr float TACH_PULSES_PER_REV = 2.0f;
 constexpr unsigned long SENSOR_SAMPLE_INTERVAL_MS = 200;
 constexpr unsigned long RPM_SAMPLE_INTERVAL_MS = 500;
 constexpr unsigned long DISPLAY_UPDATE_INTERVAL_MS = 250;
-constexpr unsigned long BLE_NOTIFY_INTERVAL_MS = 500;
+constexpr unsigned long BLUETOOTH_NOTIFY_INTERVAL_MS = 500;
 constexpr float SENSOR_FILTER_ALPHA = 0.2f;
 
-// BLE UUIDs
-constexpr const char* SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
-constexpr const char* COMMAND_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
-constexpr const char* TELEMETRY_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+// Bluetooth configuration
+constexpr const char* BLUETOOTH_DEVICE_NAME = "ESP32-Control";
 
 }  // namespace Config
