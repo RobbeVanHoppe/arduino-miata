@@ -46,10 +46,10 @@ struct HandbrakeFormatter {
     }
 };
 
-constexpr MenuPage<RpmFormatter> ENGINE_PAGE{"Engine", "rpm", RpmFormatter{}};
-constexpr MenuPage<WaterTempFormatter> WATER_PAGE{"Water", "\xB0" "C", WaterTempFormatter{}};
-constexpr MenuPage<OilPressureFormatter> OIL_PAGE{"Oil", "psi", OilPressureFormatter{}};
-constexpr MenuPage<HandbrakeFormatter> HANDBRAKE_PAGE{"Handbrake", nullptr, HandbrakeFormatter{}};
+const MenuPage<RpmFormatter> ENGINE_PAGE{"Engine", "rpm", RpmFormatter{}};
+const MenuPage<WaterTempFormatter> WATER_PAGE{"Water", "\xB0" "C", WaterTempFormatter{}};
+const MenuPage<OilPressureFormatter> OIL_PAGE{"Oil", "psi", OilPressureFormatter{}};
+const MenuPage<HandbrakeFormatter> HANDBRAKE_PAGE{"Handbrake", nullptr, HandbrakeFormatter{}};
 
 constexpr const MenuPageBase* MENU_PAGES[] = {
     &ENGINE_PAGE,
