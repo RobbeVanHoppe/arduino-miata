@@ -9,6 +9,7 @@
 #include <math.h>
 #include <cstring>
 #include <algorithm>
+#include <type_traits>
 
 // GPIO configuration – adjust to match your wiring
 constexpr int LIGHTS_PIN = 2;
@@ -24,6 +25,7 @@ constexpr int TFT_BACKLIGHT_PIN = 4;
 constexpr int TFT_SDA_PIN = 23;  // GC9A01 data/MOSI
 constexpr int TFT_SCL_PIN = 18;  // GC9A01 clock/SCK
 
+// Display geometry (GC9A01A is a 240x240 round TFT)
 constexpr int16_t DISPLAY_WIDTH = 240;
 constexpr int16_t DISPLAY_HEIGHT = 240;
 constexpr int16_t DISPLAY_CENTER_X = DISPLAY_WIDTH / 2;
@@ -101,6 +103,11 @@ void updateTelemetryCharacteristic(const SensorReadings& readings);
 
 using ValueFormatter = void (*)(const SensorReadings&, char*, size_t);
 
+template <typename T, size_t N>
+constexpr size_t arraySize(const T (&)[N]) noexcept {
+    return N;
+}
+
 struct MenuPage {
     const char* title;
     const char* units;
@@ -115,12 +122,12 @@ void formatHandbrakeValue(const SensorReadings& readings, char* buffer, size_t l
 // Add new entries here to expose more menu pages (handy for a rotary encoder).
 constexpr MenuPage MENU_PAGES[] = {
     {"Engine", "rpm", formatRpmValue},
-    {"Water", "\xB0C", formatWaterTempValue},
+    {"Water", "\xB0" "C", formatWaterTempValue},
     {"Oil", "psi", formatOilPressureValue},
     {"Handbrake", nullptr, formatHandbrakeValue},
 };
 
-constexpr size_t MENU_PAGE_COUNT = sizeof(MENU_PAGES) / sizeof(MENU_PAGES[0]);
+constexpr size_t MENU_PAGE_COUNT = arraySize(MENU_PAGES);
 size_t activeMenuPage = 0;
 
 void setActiveMenuPage(size_t index) {
