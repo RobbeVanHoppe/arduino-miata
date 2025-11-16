@@ -424,6 +424,9 @@ class MyCallbacks : public BLECharacteristicCallbacks {
             handleWindowsCommand(true);
         } else if (rxValue == "WINDOWS:DOWN") {
             handleWindowsCommand(false);
+        } else if (rxValue == "MENU") {
+            if (sizeof(MENU_PAGES) == activeMenuPage + 1) activeMenuPage = 0;
+            setActiveMenuPage(activeMenuPage + 1);
         } else {
             Serial.println("Unknown command");
         }
@@ -431,7 +434,7 @@ class MyCallbacks : public BLECharacteristicCallbacks {
 };
 
 void setup() {
-    Serial.begin(115200);
+    Serial.begin(9600);
     delay(1000);
     Serial.println("Starting Miata brain...");
 
