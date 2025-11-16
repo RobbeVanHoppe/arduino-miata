@@ -64,6 +64,8 @@ constexpr float OIL_PRESSURE_MIN_PSI = 0.0f;
 constexpr float OIL_PRESSURE_MAX_PSI = 100.0f;
 constexpr uint8_t HANDBRAKE_ACTIVE_LEVEL = LOW;
 
+
+
 // Tachometer calibration
 constexpr float TACH_PULSES_PER_REV = 2.0f;   // number of pulses per crank revolution
 
@@ -425,7 +427,6 @@ class MyCallbacks : public BLECharacteristicCallbacks {
         } else if (rxValue == "WINDOWS:DOWN") {
             handleWindowsCommand(false);
         } else if (rxValue == "MENU") {
-            if (sizeof(MENU_PAGES) == activeMenuPage + 1) activeMenuPage = 0;
             setActiveMenuPage(activeMenuPage + 1);
         } else {
             Serial.println("Unknown command");
