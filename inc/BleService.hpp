@@ -6,10 +6,6 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 
-extern "C" {
-#include <freertos/ringbuf.h>
-}
-
 #include <cstdio>
 #include <string>
 
