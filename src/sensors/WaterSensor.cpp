@@ -7,12 +7,12 @@
 
 namespace {
 constexpr WaterSensor::WaterTempPoint kMiataTempCurve[] = {
-        {  32.0f, 5200.0f },
-        {  68.0f, 2300.0f },
-        { 104.0f, 1200.0f },
-        { 140.0f,  600.0f },
-        { 176.0f,  300.0f },
-        { 212.0f,  180.0f },
+        {   0.0f, 5200.0f },
+        {  20.0f, 2300.0f },
+        {  40.0f, 1200.0f },
+        {  60.0f,  600.0f },
+        {  80.0f,  300.0f },
+        { 100.0f,  180.0f },
 };
 }
 
@@ -22,7 +22,7 @@ WaterSensor::WaterSensor(const Config &config, WaterTempPage &page, DisplayManag
 void WaterSensor::begin() {
     pinMode(config_.analogPin, INPUT);
     lastSampleMs_ = 0;
-    lastTempF_ = NAN;
+    lastTempC_ = NAN;
 }
 
 void WaterSensor::update() {
@@ -32,22 +32,22 @@ void WaterSensor::update() {
     }
     lastSampleMs_ = now;
 
-    float tempF = NAN;
-    if (!readWaterTemp(tempF)) {
+    float tempC = NAN;
+    if (!readWaterTemp(tempC)) {
         page_.setStatusMessage(F("Sensor error"));
         displayManager_.requestRefresh();
         return;
     }
 
-    if (isnan(lastTempF_) || fabsf(tempF - lastTempF_) >= config_.changeThresholdF) {
-        lastTempF_ = tempF;
-        page_.setWaterTemp(tempF);
-        page_.setStatusMessage(describeWaterStatus(tempF));
+    if (isnan(lastTempC_) || fabsf(tempC - lastTempC_) >= config_.changeThresholdC) {
+        lastTempC_ = tempC;
+        page_.setWaterTemp(tempC);
+        page_.setStatusMessage(describeWaterStatus(tempC));
         displayManager_.requestRefresh();
     }
 }
 
-bool WaterSensor::readWaterTemp(float &outTempF) {
+bool WaterSensor::readWaterTemp(float &outTempC) {
     uint32_t sum = 0;
     for (uint8_t i = 0; i < config_.samples; ++i) {
         sum += analogRead(config_.analogPin);
@@ -62,17 +62,17 @@ bool WaterSensor::readWaterTemp(float &outTempF) {
     if (sensorResistance <= 0.0f) {
         return false;
     }
-    outTempF = interpolateWaterTemp(sensorResistance);
+    outTempC = interpolateWaterTemp(sensorResistance);
     return true;
 }
 
 float WaterSensor::interpolateWaterTemp(float resistance) {
     constexpr size_t kPoints = sizeof(kMiataTempCurve) / sizeof(kMiataTempCurve[0]);
     if (resistance >= kMiataTempCurve[0].resistanceOhms) {
-        return kMiataTempCurve[0].tempF;
+        return kMiataTempCurve[0].tempC;
     }
     if (resistance <= kMiataTempCurve[kPoints - 1].resistanceOhms) {
-        return kMiataTempCurve[kPoints - 1].tempF;
+        return kMiataTempCurve[kPoints - 1].tempC;
     }
     for (size_t i = 1; i < kPoints; ++i) {
         const auto &prev = kMiataTempCurve[i - 1];
@@ -81,17 +81,17 @@ float WaterSensor::interpolateWaterTemp(float resistance) {
             const float span = prev.resistanceOhms - curr.resistanceOhms;
             const float offset = resistance - curr.resistanceOhms;
             const float fraction = offset / span;
-            return curr.tempF + (prev.tempF - curr.tempF) * fraction;
+            return curr.tempC + (prev.tempC - curr.tempC) * fraction;
         }
     }
-    return kMiataTempCurve[kPoints - 1].tempF;
+    return kMiataTempCurve[kPoints - 1].tempC;
 }
 
-String WaterSensor::describeWaterStatus(float tempF) {
-    if (tempF < 75.0f) {
+String WaterSensor::describeWaterStatus(float tempC) {
+    if (tempC < 24.0f) {
         return F("Warming up");
     }
-    if (tempF < 110.0f) {
+    if (tempC < 43.0f) {
         return F("");
     }
     return F("Hot!");

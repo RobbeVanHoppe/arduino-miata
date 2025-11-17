@@ -14,11 +14,11 @@ public:
         float pullupResistorOhms;
         uint32_t sampleIntervalMs;
         uint8_t samples;
-        float changeThresholdF;
+        float changeThresholdC;
     };
 
     struct WaterTempPoint {
-        float tempF;
+        float tempC;
         float resistanceOhms;
     };
 
@@ -27,19 +27,19 @@ public:
     void begin();
     void update();
 
-    float lastTempF() const { return lastTempF_; }
+    float lastTempC() const { return lastTempC_; }
 
 private:
 
 
-    bool readWaterTemp(float &outTempF);
+    bool readWaterTemp(float &outTempC);
     static float interpolateWaterTemp(float resistance);
-    static String describeWaterStatus(float tempF);
+    static String describeWaterStatus(float tempC);
 
     const Config config_;
     WaterTempPage &page_;
     DisplayManager &displayManager_;
 
     uint32_t lastSampleMs_ = 0;
-    float lastTempF_ = NAN;
+    float lastTempC_ = NAN;
 };

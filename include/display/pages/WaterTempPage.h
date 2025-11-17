@@ -7,14 +7,14 @@ public:
     WaterTempPage();
 
     void setTitle(const String &title);
-    void setWaterTemp(float tempF);
+    void setWaterTemp(float tempC);
     void setStatusMessage(const String &status);
 
     void render(Adafruit_GC9A01A &display) override;
 
 private:
     String _title;
-    float _waterTempF;
+    float _waterTempC;
     String _statusMessage;
     uint16_t _backgroundColor;
     uint16_t _titleColor;

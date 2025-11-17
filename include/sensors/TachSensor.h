@@ -12,6 +12,7 @@ public:
         uint32_t updateIntervalMs;
         float pulsesPerRevolution;
         float changeThresholdRpm;
+        uint32_t minPulseIntervalMicros;
     };
 
     TachSensor(const Config &config, TachPage &page, DisplayManager &displayManager);
@@ -33,6 +34,7 @@ private:
     portMUX_TYPE mux_ = portMUX_INITIALIZER_UNLOCKED;
     uint32_t lastUpdateMs_ = 0;
     float lastRpm_ = 0.0f;
+    volatile uint32_t lastPulseMicros_ = 0;
 
     static TachSensor *instance_;
 };
