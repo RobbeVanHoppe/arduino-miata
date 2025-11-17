@@ -77,7 +77,7 @@ void WaterTempPage::render(Adafruit_GC9A01A &display) {
     }
 
     display.setTextColor(_tempColor, _backgroundColor);
-    const String tempText = String(static_cast<int>(_waterTempC)) + F("\x C");
+    const String tempText = String(static_cast<int>(_waterTempC)) + F(" C");
     const int16_t tempY = (display.height() / 2) - 30;
     drawCenteredText(display, tempText, tempY, 6);
 
