@@ -17,6 +17,11 @@ public:
         float changeThresholdF;
     };
 
+    struct WaterTempPoint {
+        float tempF;
+        float resistanceOhms;
+    };
+
     WaterSensor(const Config &config, WaterTempPage &page, DisplayManager &displayManager);
 
     void begin();
@@ -25,10 +30,7 @@ public:
     float lastTempF() const { return lastTempF_; }
 
 private:
-    struct WaterTempPoint {
-        float tempF;
-        float resistanceOhms;
-    };
+
 
     bool readWaterTemp(float &outTempF);
     static float interpolateWaterTemp(float resistance);

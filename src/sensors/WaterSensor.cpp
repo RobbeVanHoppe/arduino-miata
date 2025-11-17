@@ -88,11 +88,11 @@ float WaterSensor::interpolateWaterTemp(float resistance) {
 }
 
 String WaterSensor::describeWaterStatus(float tempF) {
-    if (tempF < 150.0f) {
+    if (tempF < 75.0f) {
         return F("Warming up");
     }
-    if (tempF < 205.0f) {
-        return F("Normal range");
+    if (tempF < 110.0f) {
+        return F("");
     }
     return F("Hot!");
 }

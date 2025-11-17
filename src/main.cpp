@@ -95,7 +95,7 @@ TachSensor tachSensor({
 void updateSensors() {
     waterSensor.update();
     tachSensor.update();
-    cycleDataPages();
+//    cycleDataPages();
 }
 }
 
@@ -173,7 +173,7 @@ void setup() {
     waterPage.setWaterTemp(185.0f);
     waterPage.setStatusMessage("Awaiting client");
     tachPage.setStatusMessage("Awaiting tach signal");
-    displayManager.showPage(kWaterPageIndex);
+    displayManager.showPage(kTachPageIndex);
     displayManager.requestRefresh();
     displayManager.loop();
 

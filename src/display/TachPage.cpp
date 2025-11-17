@@ -60,7 +60,7 @@ void TachPage::render(Adafruit_GC9A01A &display) {
     drawCenteredText(display, _title, kSafeMargin + 8, 3);
 
     display.setTextColor(_rpmColor);
-    const String rpmText = String(static_cast<int>(_rpm)) + F(" RPM");
+    const String rpmText = String(static_cast<int>(_rpm));
     drawCenteredText(display, rpmText, display.height() / 2 - 30, 6);
 
     display.setTextColor(_statusColor);
