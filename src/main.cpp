@@ -5,6 +5,7 @@
 #include "main.h"
 #include "display/DisplayManager.h"
 #include "display/pages/StaticTextPage.h"
+#include "display/pages/WaterTempPage.h"
 #include "myCustomCallbacks.h"
 #include "myServerCallbacks.h"
 
@@ -20,7 +21,7 @@ DisplayConfig makeDisplayConfig() {
     cfg.backlightPin = 4;
     cfg.rotation = 0;
     cfg.backgroundColor = 0x0000;
-    cfg.refreshIntervalMs = 250;
+    cfg.refreshIntervalMs = 0;  // redraw only when something changes
     cfg.width = 240;
     cfg.height = 240;
     return cfg;
@@ -28,7 +29,8 @@ DisplayConfig makeDisplayConfig() {
 }
 
 DisplayManager displayManager(makeDisplayConfig());
-StaticTextPage statusPage("BLE Status", "Booting...");
+StaticTextPage startupPage("Miata", "Booting...");
+WaterTempPage waterPage;
 
 void setup() {
     Serial.begin(115200);
@@ -37,17 +39,42 @@ void setup() {
     pinMode(LIGHTS_PIN, OUTPUT);
     digitalWrite(LIGHTS_PIN, LOW);
 
+    displayManager.addPage(&startupPage);
+    displayManager.addPage(&waterPage);
     displayManager.begin();
-    displayManager.addPage(&statusPage);
-    statusPage.setBody("Awaiting client");
     displayManager.requestRefresh();
+    displayManager.loop();
+
+    String startupLog;
+    auto appendStartupMessage = [&](const __FlashStringHelper *message, uint32_t pauseMs) {
+        if (!startupLog.isEmpty()) {
+            startupLog += '\n';
+        }
+        startupLog += String(message);
+        startupPage.setBody(startupLog);
+        displayManager.requestRefresh();
+        displayManager.loop();
+        if (pauseMs > 0) {
+            delay(pauseMs);
+        }
+    };
+
+    appendStartupMessage(F("Powering display..."), 1000);
+
+    if (!startupLog.isEmpty()) {
+        startupLog += '\n';
+    }
+    startupLog += F("Starting BLE server...");
+    startupPage.setBody(startupLog);
+    displayManager.requestRefresh();
+    displayManager.loop();
 
     Serial.println("Starting BLE Server...");
 
     BLEDevice::init("ESP32-Control");
 
     pServer = BLEDevice::createServer();
-    pServer->setCallbacks(new MyServerCallbacks(statusPage, displayManager));
+    pServer->setCallbacks(new MyServerCallbacks(waterPage, displayManager));
 
     BLEService *pService = pServer->createService(SERVICE_UUID);
 
@@ -57,7 +84,7 @@ void setup() {
             BLECharacteristic::PROPERTY_WRITE |
             BLECharacteristic::PROPERTY_NOTIFY);
 
-    pCharacteristic->setCallbacks(new MyCustomCallbacks(statusPage, displayManager));
+    pCharacteristic->setCallbacks(new MyCustomCallbacks(waterPage, displayManager));
     pCharacteristic->setValue("Hello");
 
     pService->start();
@@ -69,9 +96,17 @@ void setup() {
     pAdvertising->setMinPreferred(0x12);
     BLEDevice::startAdvertising();
 
+    delay(1000);  // keep the startup screen visible for the full 5 seconds
+
     Serial.println("BLE device is ready, advertising as 'ESP32-Control'");
-    statusPage.setBody("Client set up");
+
+    appendStartupMessage(F("Waiting for client..."), 3000);
+
+    waterPage.setWaterTemp(185.0f);
+    waterPage.setStatusMessage("Awaiting client");
+    displayManager.showPage(1);
     displayManager.requestRefresh();
+    displayManager.loop();
 }
 
 void loop() {
