@@ -1,17 +1,12 @@
 #pragma once
 
 #include "main.h"
-#include "display/DisplayManager.h"
-#include "display/pages/WaterTempPage.h"
 
 class MyCustomCallbacks : public BLECharacteristicCallbacks {
 public:
-    MyCustomCallbacks(WaterTempPage &waterPage, DisplayManager &displayManager)
-            : _waterPage(waterPage), _displayManager(displayManager) {}
+    MyCustomCallbacks() = default;
 
     void onWrite(BLECharacteristic *characteristic) override {
-        bool lightsAreOff = false;
-
         std::string rxValue = characteristic->getValue();
         if (rxValue.empty()) {
             return;
@@ -21,26 +16,23 @@ public:
         Serial.println(rxValue.c_str());
 
         if (rxValue == "LIGHTS") {
-            if (lightsAreOff) {
+            if (_lightsAreOff) {
                 digitalWrite(LIGHTS_PIN, HIGH);
-                _waterPage.setStatusMessage("Lights ON");
-                lightsAreOff = false;
-
+                showTransientStatusMessage(F("Lights ON"));
+                _lightsAreOff = false;
             } else {
                 digitalWrite(LIGHTS_PIN, LOW);
-                _waterPage.setStatusMessage("Lights OFF");
-                lightsAreOff = true;
+                showTransientStatusMessage(F("Lights OFF"));
+                _lightsAreOff = true;
             }
         } else if (rxValue == "OFF") {
 
         } else {
-            _waterPage.setStatusMessage("Unknown cmd");
+            showTransientStatusMessage(F("Unknown cmd"));
             Serial.println("Unknown command");
         }
-        _displayManager.requestRefresh();
     }
 
 private:
-    WaterTempPage &_waterPage;
-    DisplayManager &_displayManager;
+    bool _lightsAreOff = true;
 };

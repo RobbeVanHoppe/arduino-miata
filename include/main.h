@@ -10,3 +10,6 @@ extern BLECharacteristic *pCharacteristic;
 
 const int LIGHTS_PIN = 2;
 const int WINDOWS_PIN = 3;
+
+void showTransientStatusMessage(const String &message);
+void showTransientStatusMessage(const __FlashStringHelper *message);
