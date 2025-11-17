@@ -32,7 +32,7 @@ void drawCenteredText(Adafruit_GC9A01A &display,
 }
 
 TachPage::TachPage()
-        : _title(F("RPM")),
+        : _title(F("Tacho")),
           _rpm(0.0f),
           _statusMessage(F("Awaiting tach signal")),
           _backgroundColor(0x0000),

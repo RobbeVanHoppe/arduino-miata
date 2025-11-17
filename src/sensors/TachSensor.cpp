@@ -47,8 +47,8 @@ void TachSensor::update() {
             page_.setStatusMessage(F("Engine off"));
         } else if (rpm < 1200.0f) {
             page_.setStatusMessage(F("Idle"));
-        } else {
-            page_.setStatusMessage(F("Running"));
+        } else if (rpm < 5500.0f) {
+            page_.setStatusMessage(F("Shift pls"));
         }
         displayManager_.requestRefresh();
     }
