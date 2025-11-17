@@ -37,6 +37,7 @@ DisplayManager displayManager(makeDisplayConfig());
 StaticTextPage startupPage("Miata", "Booting...");
 WaterTempPage waterPage;
 TachPage tachPage;
+StaticTextPage statusPage("Status", "");
 
 namespace {
 constexpr int kWaterTempPin = 34;
@@ -58,9 +59,28 @@ constexpr uint32_t kTachMinPulseIntervalMicros = 2000;
 constexpr uint32_t kDataPageCycleMs = 8000;
 constexpr size_t kWaterPageIndex = 1;  // after the startup page
 constexpr size_t kTachPageIndex = 2;
+constexpr size_t kStatusPageIndex = 3;
+constexpr uint32_t kStatusMessageDurationMs = 1000;
 
 uint32_t g_lastPageSwitch = 0;
 size_t g_currentDataPage = 0;
+bool g_statusMessageVisible = false;
+uint32_t g_statusMessageShownAt = 0;
+size_t g_statusReturnPage = kWaterPageIndex;
+
+void updateStatusOverlay() {
+    if (!g_statusMessageVisible || !displayManager.isReady()) {
+        return;
+    }
+    const uint32_t now = millis();
+    if ((now - g_statusMessageShownAt) < kStatusMessageDurationMs) {
+        return;
+    }
+    g_statusMessageVisible = false;
+    displayManager.showPage(g_statusReturnPage);
+    displayManager.requestRefresh();
+}
+
 void cycleDataPages() {
     if (displayManager.display() == nullptr) {
         return;
@@ -101,6 +121,24 @@ void updateSensors() {
 }
 }
 
+void showTransientStatusMessage(const String &message) {
+    if (!displayManager.isReady()) {
+        return;
+    }
+    if (!g_statusMessageVisible) {
+        g_statusReturnPage = displayManager.currentPageIndex();
+    }
+    statusPage.setBody(message);
+    displayManager.showPage(kStatusPageIndex);
+    displayManager.requestRefresh();
+    g_statusMessageVisible = true;
+    g_statusMessageShownAt = millis();
+}
+
+void showTransientStatusMessage(const __FlashStringHelper *message) {
+    showTransientStatusMessage(String(message));
+}
+
 void setup() {
     Serial.begin(115200);
     delay(1000);
@@ -111,6 +149,7 @@ void setup() {
     displayManager.addPage(&startupPage);
     displayManager.addPage(&waterPage);
     displayManager.addPage(&tachPage);
+    displayManager.addPage(&statusPage);
     displayManager.begin();
     displayManager.requestRefresh();
     displayManager.loop();
@@ -154,7 +193,7 @@ void setup() {
             BLECharacteristic::PROPERTY_WRITE |
             BLECharacteristic::PROPERTY_NOTIFY);
 
-    pCharacteristic->setCallbacks(new MyCustomCallbacks(waterPage, displayManager));
+    pCharacteristic->setCallbacks(new MyCustomCallbacks());
     pCharacteristic->setValue("Hello");
 
     pService->start();
@@ -185,6 +224,7 @@ void setup() {
 
 void loop() {
     updateSensors();
+    updateStatusOverlay();
     displayManager.loop();
     delay(50);
 }

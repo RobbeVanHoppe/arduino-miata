@@ -37,6 +37,7 @@ public:
 
     Adafruit_GC9A01A *display();
     bool isReady() const { return _initialized; }
+    size_t currentPageIndex() const { return _currentPage; }
 
 private:
     void drawPlaceholder();
