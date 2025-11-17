@@ -14,10 +14,18 @@ bool DisplayManager::begin() {
         digitalWrite(_config.backlightPin, HIGH);
     }
 
-    _display = std::make_unique<Adafruit_GC9A01A>(_config.csPin, _config.dcPin, _config.rstPin);
+    _display.reset(
+            new Adafruit_GC9A01A(_config.csPin,
+                                 _config.dcPin,
+                                 _config.sdaPin,
+                                 _config.sclPin,
+                                 _config.rstPin)
+    );
     if (!_display) {
         Serial.println("Failed to allocate GC9A01A display");
         return false;
+    } else {
+        Serial.println("Display set up");
     }
 
     _display->begin();
@@ -110,6 +118,7 @@ Adafruit_GC9A01A *DisplayManager::display() {
 }
 
 void DisplayManager::drawPlaceholder() {
+    Serial.println("Drawing placeholder");
     if (!_display) {
         return;
     }
@@ -117,5 +126,6 @@ void DisplayManager::drawPlaceholder() {
     _display->setTextColor(0xFFFF);
     _display->setTextSize(2);
     _display->setCursor(10, _config.height / 2);
-    _display->println(F("No pages registered"));
+    _display->println(F("Miata"));
+    delay(3000);
 }

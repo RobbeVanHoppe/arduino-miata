@@ -9,12 +9,14 @@
 
 struct DisplayConfig {
     int8_t csPin = 5;
-    int8_t dcPin = 2;
-    int8_t rstPin = 4;
+    int8_t dcPin = 16;
+    int8_t rstPin = 17;
+    int8_t sdaPin = 23;
+    int8_t sclPin = 18;
     int8_t backlightPin = -1;  // optional
     uint8_t rotation = 0;
-    uint16_t backgroundColor = 0x0000;  // black
-    uint32_t refreshIntervalMs = 250;
+    uint16_t backgroundColor = 0xffff;  // white
+    uint32_t refreshIntervalMs = 1000;
     uint16_t width = 240;
     uint16_t height = 240;
 };
