@@ -11,17 +11,12 @@ public:
 
     void onConnect(BLEServer *server) override {
         (void) server;
-        _waterPage.setStatusMessage("Client connected");
-        _displayManager.requestRefresh();
-        delay(1000);
-        _waterPage.setStatusMessage("");
-        _displayManager.requestRefresh();
+        showTransientStatusMessage("Phone connected");
         Serial.println("Client connected");
     }
 
     void onDisconnect(BLEServer *server) override {
-        _waterPage.setStatusMessage("Awaiting client");
-        _displayManager.requestRefresh();
+        showTransientStatusMessage("Phone disconnected");
         Serial.println("Client disconnected");
         server->getAdvertising()->start();
     }

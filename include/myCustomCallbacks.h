@@ -15,7 +15,7 @@ public:
         Serial.print("Received: ");
         Serial.println(rxValue.c_str());
 
-        if (rxValue == "LIGHTS") {
+        if (rxValue == "Lights") {
             if (_lightsAreOff) {
                 digitalWrite(LIGHTS_PIN, HIGH);
                 showTransientStatusMessage(F("Lights ON"));
@@ -25,7 +25,8 @@ public:
                 showTransientStatusMessage(F("Lights OFF"));
                 _lightsAreOff = true;
             }
-        } else if (rxValue == "OFF") {
+        } else if (rxValue == "Start") {
+            // TODO: Write a sequence to start the engine, looking at the RPMS being 0 and the handbrake being enabled
 
         } else {
             showTransientStatusMessage(F("Unknown cmd"));
@@ -34,5 +35,6 @@ public:
     }
 
 private:
-    bool _lightsAreOff = true;
+    // TODO: get a digitalRead from the light switch
+    bool _lightsAreOff = false;
 };
