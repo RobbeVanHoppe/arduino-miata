@@ -48,11 +48,12 @@ constexpr float kWaterPullupResistorOhms = 4700.0f;
 
 constexpr uint32_t kWaterSampleIntervalMs = 500;
 constexpr uint8_t kWaterSamples = 16;
-constexpr float kWaterTempChangeThresholdF = 0.5f;
+constexpr float kWaterTempChangeThresholdC = 0.5f * (5.0f / 9.0f);
 
 constexpr uint32_t kTachUpdateIntervalMs = 250;
 constexpr float kTachPulsesPerRevolution = 2.0f;  // Miata 4-cylinder ignition
 constexpr float kTachChangeThresholdRpm = 25.0f;
+constexpr uint32_t kTachMinPulseIntervalMicros = 2000;
 
 constexpr uint32_t kDataPageCycleMs = 8000;
 constexpr size_t kWaterPageIndex = 1;  // after the startup page
@@ -82,7 +83,7 @@ WaterSensor waterSensor({
         .pullupResistorOhms = kWaterPullupResistorOhms,
         .sampleIntervalMs = kWaterSampleIntervalMs,
         .samples = kWaterSamples,
-        .changeThresholdF = kWaterTempChangeThresholdF,
+        .changeThresholdC = kWaterTempChangeThresholdC,
 }, waterPage, displayManager);
 
 TachSensor tachSensor({
@@ -90,6 +91,7 @@ TachSensor tachSensor({
         .updateIntervalMs = kTachUpdateIntervalMs,
         .pulsesPerRevolution = kTachPulsesPerRevolution,
         .changeThresholdRpm = kTachChangeThresholdRpm,
+        .minPulseIntervalMicros = kTachMinPulseIntervalMicros,
 }, tachPage, displayManager);
 
 void updateSensors() {
@@ -170,7 +172,7 @@ void setup() {
 
     appendStartupMessage(F("Waiting for client..."), 3000);
 
-    waterPage.setWaterTemp(185.0f);
+    waterPage.setWaterTemp(85.0f);
     waterPage.setStatusMessage("Awaiting client");
     tachPage.setStatusMessage("Awaiting tach signal");
     displayManager.showPage(kTachPageIndex);

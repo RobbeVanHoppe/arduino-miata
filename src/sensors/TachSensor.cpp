@@ -16,6 +16,7 @@ void TachSensor::begin() {
     attachInterrupt(digitalPinToInterrupt(config_.signalPin), TachSensor::handlePulse, RISING);
     lastUpdateMs_ = 0;
     lastRpm_ = 0.0f;
+    lastPulseMicros_ = 0;
 }
 
 void TachSensor::update() {
@@ -61,6 +62,15 @@ void IRAM_ATTR TachSensor::handlePulse() {
 
 void TachSensor::recordPulse() {
     portENTER_CRITICAL_ISR(&mux_);
+    const uint32_t now = micros();
+    if (lastPulseMicros_ != 0) {
+        const uint32_t delta = now - lastPulseMicros_;
+        if (delta < config_.minPulseIntervalMicros) {
+            portEXIT_CRITICAL_ISR(&mux_);
+            return;
+        }
+    }
+    lastPulseMicros_ = now;
     pulseCount_++;
     portEXIT_CRITICAL_ISR(&mux_);
 }

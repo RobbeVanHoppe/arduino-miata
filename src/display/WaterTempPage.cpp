@@ -33,7 +33,7 @@ void drawCenteredText(Adafruit_GC9A01A &display,
 
 WaterTempPage::WaterTempPage()
         : _title(F("Water")),
-          _waterTempF(185.0f),
+          _waterTempC(85.0f),
           _statusMessage(F("")),
           _backgroundColor(0x0000),
           _titleColor(0xFFFF),
@@ -44,8 +44,8 @@ void WaterTempPage::setTitle(const String &title) {
     _title = title;
 }
 
-void WaterTempPage::setWaterTemp(float tempF) {
-    _waterTempF = tempF;
+void WaterTempPage::setWaterTemp(float tempC) {
+    _waterTempC = tempC;
 }
 
 void WaterTempPage::setStatusMessage(const String &status) {
@@ -60,7 +60,7 @@ void WaterTempPage::render(Adafruit_GC9A01A &display) {
     drawCenteredText(display, _title, kSafeMargin + 8, 3);
 
     display.setTextColor(_tempColor);
-    const String tempText = String(static_cast<int>(_waterTempF)) + F(" C");
+    const String tempText = String(static_cast<int>(_waterTempC)) + F(" C");
     drawCenteredText(display, tempText, display.height() / 2 - 30, 6);
 
     display.setTextColor(_statusColor);
