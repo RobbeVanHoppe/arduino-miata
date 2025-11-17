@@ -10,6 +10,8 @@ public:
             : _waterPage(waterPage), _displayManager(displayManager) {}
 
     void onWrite(BLECharacteristic *characteristic) override {
+        bool lightsAreOff = false;
+
         std::string rxValue = characteristic->getValue();
         if (rxValue.empty()) {
             return;
@@ -18,14 +20,19 @@ public:
         Serial.print("Received: ");
         Serial.println(rxValue.c_str());
 
-        if (rxValue == "ON") {
-            digitalWrite(LIGHTS_PIN, HIGH);
-            _waterPage.setStatusMessage("Lights ON");
-            Serial.println("LED turned ON");
+        if (rxValue == "LIGHTS") {
+            if (lightsAreOff) {
+                digitalWrite(LIGHTS_PIN, HIGH);
+                _waterPage.setStatusMessage("Lights ON");
+                lightsAreOff = false;
+
+            } else {
+                digitalWrite(LIGHTS_PIN, LOW);
+                _waterPage.setStatusMessage("Lights OFF");
+                lightsAreOff = true;
+            }
         } else if (rxValue == "OFF") {
-            digitalWrite(LIGHTS_PIN, LOW);
-            _waterPage.setStatusMessage("Lights OFF");
-            Serial.println("LED turned OFF");
+
         } else {
             _waterPage.setStatusMessage("Unknown cmd");
             Serial.println("Unknown command");
