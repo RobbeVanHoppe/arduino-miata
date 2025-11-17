@@ -5,6 +5,33 @@ constexpr int16_t kSafeMargin = 24;
 constexpr int16_t kTitleY = kSafeMargin + 8;
 constexpr int16_t kStatusYOffset = 30;
 
+void clearTextBand(Adafruit_GC9A01A &display,
+                   int16_t y,
+                   uint8_t textSize,
+                   uint16_t backgroundColor) {
+    int16_t x1, y1;
+    uint16_t w, h;
+    display.setTextSize(textSize);
+    display.getTextBounds("88", 0, y, &x1, &y1, &w, &h);
+
+    int16_t top = y1;
+    int16_t height = static_cast<int16_t>(h);
+    if (top < 0) {
+        height += top;
+        top = 0;
+    }
+    if (height <= 0) {
+        return;
+    }
+
+    const int16_t width = display.width() - (kSafeMargin * 2);
+    if (width <= 0) {
+        return;
+    }
+
+    display.fillRect(kSafeMargin, top, width, height, backgroundColor);
+}
+
 void drawCenteredText(Adafruit_GC9A01A &display,
                       const String &text,
                       int16_t y,
@@ -24,7 +51,9 @@ void drawCenteredText(Adafruit_GC9A01A &display,
         x = kSafeMargin;
     }
     const int16_t maxX = display.width() - kSafeMargin - static_cast<int16_t>(w);
-    if (x > maxX) {
+    if (maxX < kSafeMargin) {
+        x = kSafeMargin;
+    } else if (x > maxX) {
         x = maxX;
     }
 
@@ -79,9 +108,11 @@ void WaterTempPage::render(Adafruit_GC9A01A &display) {
     display.setTextColor(_tempColor, _backgroundColor);
     const String tempText = String(static_cast<int>(_waterTempC)) + F(" C");
     const int16_t tempY = (display.height() / 2) - 30;
+    clearTextBand(display, tempY, 6, _backgroundColor);
     drawCenteredText(display, tempText, tempY, 6);
 
     display.setTextColor(_statusColor, _backgroundColor);
-    drawCenteredText(display, _statusMessage,
-                     display.height() - kSafeMargin - kStatusYOffset, 2);
+    const int16_t statusY = display.height() - kSafeMargin - kStatusYOffset;
+    clearTextBand(display, statusY, 2, _backgroundColor);
+    drawCenteredText(display, _statusMessage, statusY, 2);
 }
