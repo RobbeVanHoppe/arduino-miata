@@ -15,11 +15,7 @@ bool DisplayManager::begin() {
     }
 
     _display.reset(
-            new Adafruit_GC9A01A(_config.csPin,
-                                 _config.dcPin,
-                                 _config.sdaPin,
-                                 _config.sclPin,
-                                 _config.rstPin)
+            new Adafruit_GC9A01A(_config.csPin, _config.dcPin, _config.rstPin)
     );
     if (!_display) {
         Serial.println("Failed to allocate GC9A01A display");

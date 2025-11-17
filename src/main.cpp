@@ -15,8 +15,8 @@ namespace {
 DisplayConfig makeDisplayConfig() {
     DisplayConfig cfg;
     cfg.csPin = 5;
-    cfg.dcPin = 18;
-    cfg.rstPin = 23;
+    cfg.dcPin = 16;
+    cfg.rstPin = 17;
     cfg.backlightPin = 4;
     cfg.rotation = 0;
     cfg.backgroundColor = 0x0000;
@@ -70,6 +70,8 @@ void setup() {
     BLEDevice::startAdvertising();
 
     Serial.println("BLE device is ready, advertising as 'ESP32-Control'");
+    statusPage.setBody("Client set up");
+    displayManager.requestRefresh();
 }
 
 void loop() {
