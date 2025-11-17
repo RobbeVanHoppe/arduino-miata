@@ -45,7 +45,11 @@ void DisplayManager::loop() {
     }
 
     const uint32_t now = millis();
-    if (_dirty || (now - _lastRender) >= _config.refreshIntervalMs) {
+    const bool intervalElapsed =
+            _config.refreshIntervalMs > 0 &&
+            (now - _lastRender) >= _config.refreshIntervalMs;
+
+    if (_dirty || intervalElapsed) {
         if (_pages.empty()) {
             drawPlaceholder();
         } else {

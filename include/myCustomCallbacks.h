@@ -2,12 +2,12 @@
 
 #include "main.h"
 #include "display/DisplayManager.h"
-#include "display/pages/StaticTextPage.h"
+#include "display/pages/WaterTempPage.h"
 
 class MyCustomCallbacks : public BLECharacteristicCallbacks {
 public:
-    MyCustomCallbacks(StaticTextPage &statusPage, DisplayManager &displayManager)
-            : _statusPage(statusPage), _displayManager(displayManager) {}
+    MyCustomCallbacks(WaterTempPage &waterPage, DisplayManager &displayManager)
+            : _waterPage(waterPage), _displayManager(displayManager) {}
 
     void onWrite(BLECharacteristic *characteristic) override {
         std::string rxValue = characteristic->getValue();
@@ -20,20 +20,20 @@ public:
 
         if (rxValue == "ON") {
             digitalWrite(LIGHTS_PIN, HIGH);
-            _statusPage.setBody("Lights ON");
+            _waterPage.setStatusMessage("Lights ON");
             Serial.println("LED turned ON");
         } else if (rxValue == "OFF") {
             digitalWrite(LIGHTS_PIN, LOW);
-            _statusPage.setBody("Lights OFF");
+            _waterPage.setStatusMessage("Lights OFF");
             Serial.println("LED turned OFF");
         } else {
-            _statusPage.setBody("Unknown cmd");
+            _waterPage.setStatusMessage("Unknown cmd");
             Serial.println("Unknown command");
         }
         _displayManager.requestRefresh();
     }
 
 private:
-    StaticTextPage &_statusPage;
+    WaterTempPage &_waterPage;
     DisplayManager &_displayManager;
 };
