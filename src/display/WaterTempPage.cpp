@@ -1,7 +1,7 @@
 #include "display/pages/WaterTempPage.h"
 
 namespace {
-constexpr int16_t kSafeMargin = 30;
+constexpr int16_t kSafeMargin = 24;
 
 void drawCenteredText(Adafruit_GC9A01A &display,
                       const String &text,

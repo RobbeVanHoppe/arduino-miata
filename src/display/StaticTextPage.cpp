@@ -4,7 +4,7 @@
 #include <vector>
 
 namespace {
-constexpr int16_t kCircularSafeMargin = 24;
+constexpr int16_t kCircularSafeMargin = 30;
 constexpr int16_t kBodyLineSpacing = 28;
 
 void drawCenteredText(Adafruit_GC9A01A &display,
