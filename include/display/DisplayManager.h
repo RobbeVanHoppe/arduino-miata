@@ -49,9 +49,11 @@ public:
 private:
     void drawPlaceholder();
     void drawTransientOverlay();
+    void resetCurrentPageLayout();
 
     struct TransientMessage {
         bool active = false;
+        bool requiresPageReset = false;
         String text;
         uint32_t shownAt = 0;
         uint32_t durationMs = 0;

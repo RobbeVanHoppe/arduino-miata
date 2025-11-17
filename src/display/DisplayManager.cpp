@@ -54,6 +54,10 @@ void DisplayManager::loop() {
         _transientMessage.durationMs > 0 &&
         (now - _transientMessage.shownAt) >= _transientMessage.durationMs) {
         _transientMessage.active = false;
+        if (_transientMessage.requiresPageReset) {
+            resetCurrentPageLayout();
+            _transientMessage.requiresPageReset = false;
+        }
         _dirty = true;
     }
 
@@ -138,6 +142,7 @@ void DisplayManager::setSuspended(bool suspended) {
     }
     if (suspended) {
         _transientMessage.active = false;
+        _transientMessage.requiresPageReset = false;
     } else {
         _dirty = true;
     }
@@ -152,6 +157,10 @@ void DisplayManager::showTransientMessage(const String &message,
     }
     if (message.isEmpty()) {
         _transientMessage.active = false;
+        if (_transientMessage.requiresPageReset) {
+            resetCurrentPageLayout();
+            _transientMessage.requiresPageReset = false;
+        }
         _dirty = true;
         return;
     }
@@ -160,6 +169,7 @@ void DisplayManager::showTransientMessage(const String &message,
     _transientMessage.durationMs = durationMs;
     _transientMessage.textColor = textColor;
     _transientMessage.backgroundColor = backgroundColor;
+    _transientMessage.requiresPageReset = true;
     _transientMessage.active = true;
     _dirty = true;
 }
@@ -188,6 +198,8 @@ void DisplayManager::drawTransientOverlay() {
 
     Adafruit_GC9A01A &display = *_display;
     display.setTextWrap(false);
+    display.fillScreen(_transientMessage.backgroundColor);
+
     const uint8_t textSize = 2;
     display.setTextSize(textSize);
 
@@ -195,36 +207,30 @@ void DisplayManager::drawTransientOverlay() {
     uint16_t w, h;
     display.getTextBounds(_transientMessage.text.c_str(), 0, 0, &x1, &y1, &w, &h);
 
-    constexpr int16_t kPaddingX = 12;
-    constexpr int16_t kPaddingY = 8;
-    int16_t boxWidth = static_cast<int16_t>(w) + (kPaddingX * 2);
-    const int16_t maxWidth = static_cast<int16_t>(display.width()) - 20;
-    if (boxWidth > maxWidth) {
-        boxWidth = maxWidth;
+    int16_t topLeftX = (static_cast<int16_t>(display.width()) - static_cast<int16_t>(w)) / 2;
+    int16_t topLeftY = (static_cast<int16_t>(display.height()) - static_cast<int16_t>(h)) / 2;
+    if (topLeftX < 0) {
+        topLeftX = 0;
     }
-    if (boxWidth < 40) {
-        boxWidth = 40;
-    }
-    int16_t boxHeight = static_cast<int16_t>(h) + (kPaddingY * 2);
-    if (boxHeight < 20) {
-        boxHeight = 20;
-    }
-    if (boxHeight > static_cast<int16_t>(display.height()) - 20) {
-        boxHeight = static_cast<int16_t>(display.height()) - 20;
-    }
-    int16_t boxX = (static_cast<int16_t>(display.width()) - boxWidth) / 2;
-    if (boxX < 10) {
-        boxX = 10;
-    }
-    int16_t boxY = static_cast<int16_t>(display.height()) - boxHeight - 20;
-    if (boxY < 10) {
-        boxY = 10;
+    if (topLeftY < 0) {
+        topLeftY = 0;
     }
 
-    display.fillRoundRect(boxX, boxY, boxWidth, boxHeight, 10, _transientMessage.backgroundColor);
-    display.drawRoundRect(boxX, boxY, boxWidth, boxHeight, 10, _transientMessage.textColor);
+    const int16_t cursorX = topLeftX - x1;
+    const int16_t cursorY = topLeftY - y1;
 
     display.setTextColor(_transientMessage.textColor, _transientMessage.backgroundColor);
-    display.setCursor(boxX + kPaddingX, boxY + kPaddingY);
+    display.setCursor(cursorX, cursorY);
     display.print(_transientMessage.text);
+}
+
+void DisplayManager::resetCurrentPageLayout() {
+    if (!_display) {
+        return;
+    }
+    _display->fillScreen(_config.backgroundColor);
+    if (_pages.empty()) {
+        return;
+    }
+    _pages[_currentPage]->onEnter(*_display);
 }
