@@ -37,7 +37,7 @@ DisplayManager displayManager(makeDisplayConfig());
 StaticTextPage startupPage("Miata", "Booting");
 WaterTempPage waterPage;
 TachPage tachPage;
-constexpr uint32_t kStatusOverlayDurationMs = 1200;
+constexpr uint32_t kStatusOverlayDurationMs = 2000;
 
 namespace {
 constexpr int kWaterTempPin = 34;
