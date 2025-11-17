@@ -86,8 +86,13 @@ void StaticTextPage::render(Adafruit_GC9A01A &display) {
 
     const int16_t totalHeight = static_cast<int16_t>(lines.size()) * kBodyLineSpacing;
     int16_t startY = (display.height() / 2) - (totalHeight / 2);
-    if (startY < kCircularSafeMargin + 50) {
-        startY = kCircularSafeMargin + 50;
+    const int16_t minStartY = kCircularSafeMargin + 50;
+    if (startY < minStartY) {
+        startY = minStartY;
+    }
+    const int16_t maxStartY = display.height() - kCircularSafeMargin - totalHeight;
+    if (maxStartY >= minStartY && startY > maxStartY) {
+        startY = maxStartY;
     }
 
     for (const auto &line : lines) {

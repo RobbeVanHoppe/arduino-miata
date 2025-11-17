@@ -48,7 +48,7 @@ constexpr float kWaterPullupResistorOhms = 4700.0f;
 
 constexpr uint32_t kWaterSampleIntervalMs = 500;
 constexpr uint8_t kWaterSamples = 16;
-constexpr float kWaterTempChangeThresholdC = 0.5f * (5.0f / 9.0f);
+constexpr float kWaterTempChangeThresholdC = 0.5f;
 
 constexpr uint32_t kTachUpdateIntervalMs = 250;
 constexpr float kTachPulsesPerRevolution = 2.0f;  // Miata 4-cylinder ignition
