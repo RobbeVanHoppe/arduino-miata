@@ -1,4 +1,4 @@
-#include "TM1638LedAndKey.h"
+#include "TM1638/TM1638LedAndKey.h"
 
 namespace {
 constexpr uint8_t kAutoIncrementCommand = 0x40;

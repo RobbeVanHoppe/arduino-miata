@@ -221,7 +221,7 @@ void setup() {
     waterPage.setWaterTemp(85.0f);
     waterPage.setStatusMessage("Awaiting client");
     tachPage.setStatusMessage("Awaiting tach signal");
-    displayManager.showPage(kWaterPageIndex);
+    displayManager.showPage(kTachPageIndex);
     displayManager.requestRefresh();
     displayManager.loop();
 
