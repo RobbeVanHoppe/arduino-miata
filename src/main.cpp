@@ -34,7 +34,7 @@ DisplayConfig makeDisplayConfig() {
 }
 
 DisplayManager displayManager(makeDisplayConfig());
-StaticTextPage startupPage("Miata", "Booting...");
+StaticTextPage startupPage("Miata", "Booting");
 WaterTempPage waterPage;
 TachPage tachPage;
 StaticTextPage statusPage("Status", "");
@@ -168,12 +168,12 @@ void setup() {
         }
     };
 
-    appendStartupMessage(F("Powering display..."), 1000);
+    appendStartupMessage(F("Powering display"), 1000);
 
     if (!startupLog.isEmpty()) {
         startupLog += '\n';
     }
-    startupLog += F("Starting BLE server...");
+    startupLog += F("Starting BLE");
     startupPage.setBody(startupLog);
     displayManager.requestRefresh();
     displayManager.loop();
@@ -209,7 +209,7 @@ void setup() {
 
     Serial.println("BLE device is ready, advertising as 'ESP32-Control'");
 
-    appendStartupMessage(F("Waiting for client..."), 3000);
+    appendStartupMessage(F("Awaiting client"), 3000);
 
     waterPage.setWaterTemp(85.0f);
     waterPage.setStatusMessage("Awaiting client");
