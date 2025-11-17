@@ -13,6 +13,9 @@ public:
         (void) server;
         _waterPage.setStatusMessage("Client connected");
         _displayManager.requestRefresh();
+        delay(1000);
+        _waterPage.setStatusMessage("");
+        _displayManager.requestRefresh();
         Serial.println("Client connected");
     }
 

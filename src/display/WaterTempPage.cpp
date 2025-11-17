@@ -1,7 +1,7 @@
 #include "display/pages/WaterTempPage.h"
 
 namespace {
-constexpr int16_t kSafeMargin = 24;
+constexpr int16_t kSafeMargin = 30;
 
 void drawCenteredText(Adafruit_GC9A01A &display,
                       const String &text,
@@ -32,9 +32,9 @@ void drawCenteredText(Adafruit_GC9A01A &display,
 }
 
 WaterTempPage::WaterTempPage()
-        : _title(F("Water Temp")),
+        : _title(F("Water")),
           _waterTempF(185.0f),
-          _statusMessage(F("Awaiting client")),
+          _statusMessage(F("")),
           _backgroundColor(0x0000),
           _titleColor(0xFFFF),
           _tempColor(0x07E0),
@@ -60,7 +60,7 @@ void WaterTempPage::render(Adafruit_GC9A01A &display) {
     drawCenteredText(display, _title, kSafeMargin + 8, 3);
 
     display.setTextColor(_tempColor);
-    const String tempText = String(static_cast<int>(_waterTempF)) + F("°F");
+    const String tempText = String(static_cast<int>(_waterTempF)) + F(" C");
     drawCenteredText(display, tempText, display.height() / 2 - 30, 6);
 
     display.setTextColor(_statusColor);
