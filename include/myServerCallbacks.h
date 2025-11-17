@@ -1,22 +1,29 @@
-//
-// Created by robbe on 17/11/2025.
-//
 #pragma once
 
 #include "main.h"
+#include "display/DisplayManager.h"
+#include "display/pages/StaticTextPage.h"
 
 class MyServerCallbacks : public BLEServerCallbacks {
-    bool deviceConnected = false;
+public:
+    MyServerCallbacks(StaticTextPage &statusPage, DisplayManager &displayManager)
+            : _statusPage(statusPage), _displayManager(displayManager) {}
 
-    void onConnect(BLEServer* pServer) override {
-        deviceConnected = true;
+    void onConnect(BLEServer *server) override {
+        (void) server;
+        _statusPage.setBody("Client connected");
+        _displayManager.requestRefresh();
         Serial.println("Client connected");
     }
 
-    void onDisconnect(BLEServer* pServer) override {
-        deviceConnected = false;
+    void onDisconnect(BLEServer *server) override {
+        _statusPage.setBody("Awaiting client");
+        _displayManager.requestRefresh();
         Serial.println("Client disconnected");
-        // Make advertising restart so you can reconnect
-        pServer->getAdvertising()->start();
+        server->getAdvertising()->start();
     }
+
+private:
+    StaticTextPage &_statusPage;
+    DisplayManager &_displayManager;
 };
