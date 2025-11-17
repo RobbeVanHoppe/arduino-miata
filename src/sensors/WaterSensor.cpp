@@ -23,9 +23,13 @@ void WaterSensor::begin() {
     pinMode(config_.analogPin, INPUT);
     lastSampleMs_ = 0;
     lastTempC_ = NAN;
+    enabled_ = true;
 }
 
 void WaterSensor::update() {
+    if (!enabled_) {
+        return;
+    }
     const uint32_t now = millis();
     if ((now - lastSampleMs_) < config_.sampleIntervalMs) {
         return;
@@ -95,4 +99,14 @@ String WaterSensor::describeWaterStatus(float tempC) {
         return F("");
     }
     return F("Hot!");
+}
+
+void WaterSensor::setEnabled(bool enabled) {
+    enabled_ = enabled;
+    if (!enabled_) {
+        page_.setStatusMessage(F("Sleeping"));
+    } else if (!isnan(lastTempC_)) {
+        page_.setStatusMessage(describeWaterStatus(lastTempC_));
+    }
+    displayManager_.requestRefresh();
 }

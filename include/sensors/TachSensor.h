@@ -19,6 +19,8 @@ public:
 
     void begin();
     void update();
+    void setEnabled(bool enabled);
+    bool isEnabled() const { return enabled_; }
 
     float lastRpm() const { return lastRpm_; }
 
@@ -35,6 +37,7 @@ private:
     uint32_t lastUpdateMs_ = 0;
     float lastRpm_ = 0.0f;
     volatile uint32_t lastPulseMicros_ = 0;
+    volatile bool enabled_ = true;
 
     static TachSensor *instance_;
 };

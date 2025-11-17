@@ -13,3 +13,6 @@ const int WINDOWS_PIN = 3;
 
 void showTransientStatusMessage(const String &message);
 void showTransientStatusMessage(const __FlashStringHelper *message);
+void enterLowPowerMode();
+void exitLowPowerMode();
+bool isLowPowerMode();

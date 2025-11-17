@@ -37,7 +37,7 @@ DisplayManager displayManager(makeDisplayConfig());
 StaticTextPage startupPage("Miata", "Booting");
 WaterTempPage waterPage;
 TachPage tachPage;
-StaticTextPage statusPage("Status", "");
+constexpr uint32_t kStatusOverlayDurationMs = 1200;
 
 namespace {
 constexpr int kWaterTempPin = 34;
@@ -59,27 +59,10 @@ constexpr uint32_t kTachMinPulseIntervalMicros = 2000;
 constexpr uint32_t kDataPageCycleMs = 8000;
 constexpr size_t kWaterPageIndex = 1;  // after the startup page
 constexpr size_t kTachPageIndex = 2;
-constexpr size_t kStatusPageIndex = 3;
-constexpr uint32_t kStatusMessageDurationMs = 1000;
 
 uint32_t g_lastPageSwitch = 0;
 size_t g_currentDataPage = 0;
-bool g_statusMessageVisible = false;
-uint32_t g_statusMessageShownAt = 0;
-size_t g_statusReturnPage = kWaterPageIndex;
-
-void updateStatusOverlay() {
-    if (!g_statusMessageVisible || !displayManager.isReady()) {
-        return;
-    }
-    const uint32_t now = millis();
-    if ((now - g_statusMessageShownAt) < kStatusMessageDurationMs) {
-        return;
-    }
-    g_statusMessageVisible = false;
-    displayManager.showPage(g_statusReturnPage);
-    displayManager.requestRefresh();
-}
+bool g_lowPowerMode = false;
 
 void cycleDataPages() {
     if (displayManager.display() == nullptr) {
@@ -125,18 +108,43 @@ void showTransientStatusMessage(const String &message) {
     if (!displayManager.isReady()) {
         return;
     }
-    if (!g_statusMessageVisible) {
-        g_statusReturnPage = displayManager.currentPageIndex();
+    if (displayManager.isSuspended()) {
+        Serial.print(F("Status (suspended): "));
+        Serial.println(message);
+        return;
     }
-    statusPage.setBody(message);
-    displayManager.showPage(kStatusPageIndex);
-    displayManager.requestRefresh();
-    g_statusMessageVisible = true;
-    g_statusMessageShownAt = millis();
+    displayManager.showTransientMessage(message, kStatusOverlayDurationMs);
 }
 
 void showTransientStatusMessage(const __FlashStringHelper *message) {
     showTransientStatusMessage(String(message));
+}
+
+void enterLowPowerMode() {
+    if (g_lowPowerMode) {
+        return;
+    }
+    Serial.println(F("Entering low power mode"));
+    g_lowPowerMode = true;
+    waterSensor.setEnabled(false);
+    tachSensor.setEnabled(false);
+    displayManager.setSuspended(true);
+}
+
+void exitLowPowerMode() {
+    if (!g_lowPowerMode) {
+        return;
+    }
+    Serial.println(F("Leaving low power mode"));
+    g_lowPowerMode = false;
+    displayManager.setSuspended(false);
+    waterSensor.setEnabled(true);
+    tachSensor.setEnabled(true);
+    showTransientStatusMessage(F("Awake"));
+}
+
+bool isLowPowerMode() {
+    return g_lowPowerMode;
 }
 
 void setup() {
@@ -149,7 +157,6 @@ void setup() {
     displayManager.addPage(&startupPage);
     displayManager.addPage(&waterPage);
     displayManager.addPage(&tachPage);
-    displayManager.addPage(&statusPage);
     displayManager.begin();
     displayManager.requestRefresh();
     displayManager.loop();
@@ -224,7 +231,6 @@ void setup() {
 
 void loop() {
     updateSensors();
-    updateStatusOverlay();
     displayManager.loop();
     delay(50);
 }

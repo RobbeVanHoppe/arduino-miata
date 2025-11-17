@@ -28,6 +28,12 @@ public:
         } else if (rxValue == "Start") {
             // TODO: Write a sequence to start the engine, looking at the RPMS being 0 and the handbrake being enabled
 
+        } else if (rxValue == "Sleep") {
+            enterLowPowerMode();
+
+        } else if (rxValue == "Wake") {
+            exitLowPowerMode();
+
         } else {
             showTransientStatusMessage(F("Unknown cmd"));
             Serial.println("Unknown command");
