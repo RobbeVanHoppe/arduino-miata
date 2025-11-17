@@ -11,12 +11,12 @@ public:
 
     void onConnect(BLEServer *server) override {
         (void) server;
-        showTransientStatusMessage("Phone connected");
+        showTransientStatusMessage("Connected");
         Serial.println("Client connected");
     }
 
     void onDisconnect(BLEServer *server) override {
-        showTransientStatusMessage("Phone disconnected");
+        showTransientStatusMessage("Disconnected");
         Serial.println("Client disconnected");
         server->getAdvertising()->start();
     }
