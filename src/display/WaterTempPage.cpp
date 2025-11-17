@@ -2,6 +2,8 @@
 
 namespace {
 constexpr int16_t kSafeMargin = 24;
+constexpr int16_t kTitleY = kSafeMargin + 8;
+constexpr int16_t kStatusYOffset = 30;
 
 void drawCenteredText(Adafruit_GC9A01A &display,
                       const String &text,
@@ -38,10 +40,12 @@ WaterTempPage::WaterTempPage()
           _backgroundColor(0x0000),
           _titleColor(0xFFFF),
           _tempColor(0x07E0),
-          _statusColor(0xFFE0) {}
+          _statusColor(0xFFE0),
+          _layoutDirty(true) {}
 
 void WaterTempPage::setTitle(const String &title) {
     _title = title;
+    _layoutDirty = true;
 }
 
 void WaterTempPage::setWaterTemp(float tempC) {
@@ -52,17 +56,32 @@ void WaterTempPage::setStatusMessage(const String &status) {
     _statusMessage = status;
 }
 
-void WaterTempPage::render(Adafruit_GC9A01A &display) {
+void WaterTempPage::onEnter(Adafruit_GC9A01A &display) {
+    (void) display;
+    _layoutDirty = true;
+}
+
+void WaterTempPage::drawBaseLayout(Adafruit_GC9A01A &display) {
     display.fillScreen(_backgroundColor);
     display.setTextWrap(false);
+    display.setTextColor(_titleColor, _backgroundColor);
+    drawCenteredText(display, _title, kTitleY, 3);
+    _layoutDirty = false;
+}
 
-    display.setTextColor(_titleColor);
-    drawCenteredText(display, _title, kSafeMargin + 8, 3);
+void WaterTempPage::render(Adafruit_GC9A01A &display) {
+    if (_layoutDirty) {
+        drawBaseLayout(display);
+    } else {
+        display.setTextWrap(false);
+    }
 
-    display.setTextColor(_tempColor);
-    const String tempText = String(static_cast<int>(_waterTempC)) + F(" C");
-    drawCenteredText(display, tempText, display.height() / 2 - 30, 6);
+    display.setTextColor(_tempColor, _backgroundColor);
+    const String tempText = String(static_cast<int>(_waterTempC)) + F("\xB0C");
+    const int16_t tempY = (display.height() / 2) - 30;
+    drawCenteredText(display, tempText, tempY, 6);
 
-    display.setTextColor(_statusColor);
-    drawCenteredText(display, _statusMessage, display.height() - kSafeMargin - 30, 2);
+    display.setTextColor(_statusColor, _backgroundColor);
+    drawCenteredText(display, _statusMessage,
+                     display.height() - kSafeMargin - kStatusYOffset, 2);
 }

@@ -54,10 +54,10 @@ bool WaterSensor::readWaterTemp(float &outTempC) {
         delayMicroseconds(150);
     }
     const float average = static_cast<float>(sum) / config_.samples;
-    const float voltage = (average / static_cast<float>(config_.adcResolution)) * config_.referenceVoltage;
-    if (voltage <= 0.05f || voltage >= (config_.referenceVoltage - 0.05f)) {
+    if (average <= 1.0f || average >= (static_cast<float>(config_.adcResolution) - 1.0f)) {
         return false;
     }
+    const float voltage = (average / static_cast<float>(config_.adcResolution)) * config_.referenceVoltage;
     const float sensorResistance = (voltage * config_.pullupResistorOhms) / (config_.referenceVoltage - voltage);
     if (sensorResistance <= 0.0f) {
         return false;
