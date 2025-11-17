@@ -26,7 +26,9 @@ void drawCenteredText(Adafruit_GC9A01A &display,
         x = kCircularSafeMargin;
     }
     const int16_t maxX = display.width() - kCircularSafeMargin - static_cast<int16_t>(w);
-    if (x > maxX) {
+    if (maxX < kCircularSafeMargin) {
+        x = kCircularSafeMargin;
+    } else if (x > maxX) {
         x = maxX;
     }
 
