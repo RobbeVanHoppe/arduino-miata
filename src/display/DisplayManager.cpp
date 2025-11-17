@@ -31,6 +31,8 @@ bool DisplayManager::begin() {
     _initialized = true;
     _dirty = true;
     _lastRender = millis();
+    _suspended = false;
+    _transientMessage.active = false;
 
     if (!_pages.empty()) {
         _pages[_currentPage]->onEnter(*_display);
@@ -43,8 +45,18 @@ void DisplayManager::loop() {
     if (!_initialized || !_display) {
         return;
     }
+    if (_suspended) {
+        return;
+    }
 
     const uint32_t now = millis();
+    if (_transientMessage.active &&
+        _transientMessage.durationMs > 0 &&
+        (now - _transientMessage.shownAt) >= _transientMessage.durationMs) {
+        _transientMessage.active = false;
+        _dirty = true;
+    }
+
     const bool intervalElapsed =
             _config.refreshIntervalMs > 0 &&
             (now - _lastRender) >= _config.refreshIntervalMs;
@@ -54,6 +66,9 @@ void DisplayManager::loop() {
             drawPlaceholder();
         } else {
             _pages[_currentPage]->render(*_display);
+        }
+        if (_transientMessage.active) {
+            drawTransientOverlay();
         }
         _lastRender = now;
         _dirty = false;
@@ -113,6 +128,42 @@ void DisplayManager::requestRefresh() {
     _dirty = true;
 }
 
+void DisplayManager::setSuspended(bool suspended) {
+    if (_suspended == suspended) {
+        return;
+    }
+    _suspended = suspended;
+    if (_config.backlightPin >= 0) {
+        digitalWrite(_config.backlightPin, suspended ? LOW : HIGH);
+    }
+    if (suspended) {
+        _transientMessage.active = false;
+    } else {
+        _dirty = true;
+    }
+}
+
+void DisplayManager::showTransientMessage(const String &message,
+                                          uint32_t durationMs,
+                                          uint16_t textColor,
+                                          uint16_t backgroundColor) {
+    if (!_initialized || !_display || _suspended) {
+        return;
+    }
+    if (message.isEmpty()) {
+        _transientMessage.active = false;
+        _dirty = true;
+        return;
+    }
+    _transientMessage.text = message;
+    _transientMessage.shownAt = millis();
+    _transientMessage.durationMs = durationMs;
+    _transientMessage.textColor = textColor;
+    _transientMessage.backgroundColor = backgroundColor;
+    _transientMessage.active = true;
+    _dirty = true;
+}
+
 Adafruit_GC9A01A *DisplayManager::display() {
     return _display.get();
 }
@@ -128,4 +179,52 @@ void DisplayManager::drawPlaceholder() {
     _display->setCursor(10, _config.height / 2);
     _display->println(F("Miata"));
     delay(3000);
+}
+
+void DisplayManager::drawTransientOverlay() {
+    if (!_display || !_transientMessage.active || _transientMessage.text.isEmpty()) {
+        return;
+    }
+
+    Adafruit_GC9A01A &display = *_display;
+    display.setTextWrap(false);
+    const uint8_t textSize = 2;
+    display.setTextSize(textSize);
+
+    int16_t x1, y1;
+    uint16_t w, h;
+    display.getTextBounds(_transientMessage.text.c_str(), 0, 0, &x1, &y1, &w, &h);
+
+    constexpr int16_t kPaddingX = 12;
+    constexpr int16_t kPaddingY = 8;
+    int16_t boxWidth = static_cast<int16_t>(w) + (kPaddingX * 2);
+    const int16_t maxWidth = static_cast<int16_t>(display.width()) - 20;
+    if (boxWidth > maxWidth) {
+        boxWidth = maxWidth;
+    }
+    if (boxWidth < 40) {
+        boxWidth = 40;
+    }
+    int16_t boxHeight = static_cast<int16_t>(h) + (kPaddingY * 2);
+    if (boxHeight < 20) {
+        boxHeight = 20;
+    }
+    if (boxHeight > static_cast<int16_t>(display.height()) - 20) {
+        boxHeight = static_cast<int16_t>(display.height()) - 20;
+    }
+    int16_t boxX = (static_cast<int16_t>(display.width()) - boxWidth) / 2;
+    if (boxX < 10) {
+        boxX = 10;
+    }
+    int16_t boxY = static_cast<int16_t>(display.height()) - boxHeight - 20;
+    if (boxY < 10) {
+        boxY = 10;
+    }
+
+    display.fillRoundRect(boxX, boxY, boxWidth, boxHeight, 10, _transientMessage.backgroundColor);
+    display.drawRoundRect(boxX, boxY, boxWidth, boxHeight, 10, _transientMessage.textColor);
+
+    display.setTextColor(_transientMessage.textColor, _transientMessage.backgroundColor);
+    display.setCursor(boxX + kPaddingX, boxY + kPaddingY);
+    display.print(_transientMessage.text);
 }

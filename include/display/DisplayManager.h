@@ -34,6 +34,13 @@ public:
     void showPage(size_t index);
 
     void requestRefresh();
+    void setSuspended(bool suspended);
+    bool isSuspended() const { return _suspended; }
+
+    void showTransientMessage(const String &message,
+                              uint32_t durationMs = 1000,
+                              uint16_t textColor = 0xFFFF,
+                              uint16_t backgroundColor = 0x0000);
 
     Adafruit_GC9A01A *display();
     bool isReady() const { return _initialized; }
@@ -41,6 +48,16 @@ public:
 
 private:
     void drawPlaceholder();
+    void drawTransientOverlay();
+
+    struct TransientMessage {
+        bool active = false;
+        String text;
+        uint32_t shownAt = 0;
+        uint32_t durationMs = 0;
+        uint16_t textColor = 0xFFFF;
+        uint16_t backgroundColor = 0x0000;
+    };
 
     DisplayConfig _config;
     std::unique_ptr<Adafruit_GC9A01A> _display;
@@ -49,4 +66,6 @@ private:
     uint32_t _lastRender = 0;
     bool _initialized = false;
     bool _dirty = true;
+    bool _suspended = false;
+    TransientMessage _transientMessage;
 };

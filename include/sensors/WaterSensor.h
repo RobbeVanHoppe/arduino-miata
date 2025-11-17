@@ -26,6 +26,8 @@ public:
 
     void begin();
     void update();
+    void setEnabled(bool enabled);
+    bool isEnabled() const { return enabled_; }
 
     float lastTempC() const { return lastTempC_; }
 
@@ -42,4 +44,5 @@ private:
 
     uint32_t lastSampleMs_ = 0;
     float lastTempC_ = NAN;
+    bool enabled_ = true;
 };

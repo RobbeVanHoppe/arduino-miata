@@ -17,9 +17,13 @@ void TachSensor::begin() {
     lastUpdateMs_ = 0;
     lastRpm_ = 0.0f;
     lastPulseMicros_ = 0;
+    enabled_ = true;
 }
 
 void TachSensor::update() {
+    if (!enabled_) {
+        return;
+    }
     const uint32_t now = millis();
     if ((now - lastUpdateMs_) < config_.updateIntervalMs) {
         return;
@@ -62,6 +66,10 @@ void IRAM_ATTR TachSensor::handlePulse() {
 
 void TachSensor::recordPulse() {
     portENTER_CRITICAL_ISR(&mux_);
+    if (!enabled_) {
+        portEXIT_CRITICAL_ISR(&mux_);
+        return;
+    }
     const uint32_t now = micros();
     if (lastPulseMicros_ != 0) {
         const uint32_t delta = now - lastPulseMicros_;
@@ -73,4 +81,23 @@ void TachSensor::recordPulse() {
     lastPulseMicros_ = now;
     pulseCount_++;
     portEXIT_CRITICAL_ISR(&mux_);
+}
+
+void TachSensor::setEnabled(bool enabled) {
+    if (enabled_ == enabled) {
+        return;
+    }
+    portENTER_CRITICAL(&mux_);
+    enabled_ = enabled;
+    pulseCount_ = 0;
+    lastPulseMicros_ = 0;
+    portEXIT_CRITICAL(&mux_);
+    if (!enabled) {
+        lastRpm_ = 0.0f;
+        page_.setRpm(0.0f);
+        page_.setStatusMessage(F("Sleeping"));
+    } else {
+        page_.setStatusMessage(F("Awaiting tach signal"));
+    }
+    displayManager_.requestRefresh();
 }
