@@ -11,6 +11,7 @@
 #include "display/pages/WaterTempPage.h"
 #include "sensors/TachSensor.h"
 #include "sensors/WaterSensor.h"
+#include "TM1638/TM1638LedAndKey.h"
 #include "myCustomCallbacks.h"
 #include "myServerCallbacks.h"
 
@@ -63,6 +64,8 @@ constexpr size_t kTachPageIndex = 2;
 uint32_t g_lastPageSwitch = 0;
 size_t g_currentDataPage = 0;
 bool g_lowPowerMode = false;
+TM1638LedAndKeyModule g_ledKeyModule({});
+uint8_t g_lastKeyState = 0;
 
 void cycleDataPages() {
     if (displayManager.display() == nullptr) {
@@ -101,6 +104,21 @@ void updateSensors() {
     waterSensor.update();
     tachSensor.update();
 //    cycleDataPages();
+}
+
+void updateInputs() {
+    const uint8_t keys = g_ledKeyModule.readKeys();
+    const uint8_t newlyPressed = keys & ~g_lastKeyState;
+    g_lastKeyState = keys;
+
+    if (newlyPressed & 0x01) {
+        displayManager.previousPage();
+        displayManager.requestRefresh();
+    }
+    if (newlyPressed & 0x02) {
+        displayManager.nextPage();
+        displayManager.requestRefresh();
+    }
 }
 }
 
@@ -153,6 +171,8 @@ void setup() {
 
     pinMode(LIGHTS_PIN, OUTPUT);
     digitalWrite(LIGHTS_PIN, LOW);
+
+    g_ledKeyModule.begin();
 
     displayManager.addPage(&startupPage);
     displayManager.addPage(&waterPage);
@@ -231,6 +251,7 @@ void setup() {
 
 void loop() {
     updateSensors();
+    updateInputs();
     displayManager.loop();
     delay(50);
 }
