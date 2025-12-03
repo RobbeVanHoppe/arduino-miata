@@ -5,9 +5,9 @@
 class TM1638LedAndKeyModule {
 public:
     struct Config {
-        uint8_t dioPin = 15;
-        uint8_t clkPin = 4;
-        uint8_t stbPin = 19;
+        uint8_t dioPin = 27;
+        uint8_t clkPin = 26;
+        uint8_t stbPin = 25;
         uint8_t brightness = 5;  // range: 0 (dim) - 7 (bright)
         bool displayEnabled = true;
     };
