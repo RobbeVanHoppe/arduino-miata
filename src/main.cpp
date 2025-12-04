@@ -112,10 +112,12 @@ void updateInputs() {
     g_lastKeyState = keys;
 
     if (newlyPressed & 0x01) {
+        Serial.println("K1");
         displayManager.previousPage();
         displayManager.requestRefresh();
     }
     if (newlyPressed & 0x02) {
+        Serial.println("K2");
         displayManager.nextPage();
         displayManager.requestRefresh();
     }
