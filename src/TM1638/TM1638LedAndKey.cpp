@@ -101,7 +101,8 @@ void TM1638LedAndKeyModule::setLeds(uint8_t ledMask) {
 
 uint8_t TM1638LedAndKeyModule::readKeys() {
     uint8_t keys = 0;
-    sendCommand(kReadKeyCommand);
+    startTransaction();
+    shiftOutByte(kReadKeyCommand);
 
     pinMode(config_.dioPin, INPUT);
     for (uint8_t i = 0; i < 4; ++i) {
@@ -109,6 +110,7 @@ uint8_t TM1638LedAndKeyModule::readKeys() {
         keys |= (data & 0x11) << i;
     }
     pinMode(config_.dioPin, OUTPUT);
+    endTransaction();
 
     return keys;
 }
