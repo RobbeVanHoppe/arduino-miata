@@ -64,7 +64,7 @@ constexpr size_t kTachPageIndex = 2;
 uint32_t g_lastPageSwitch = 0;
 size_t g_currentDataPage = 0;
 bool g_lowPowerMode = false;
-TM1638LedAndKeyModule g_ledKeyModule({});
+//TM1638LedAndKeyModule g_ledKeyModule({});
 uint8_t g_lastKeyState = 0;
 
 void cycleDataPages() {
@@ -106,22 +106,21 @@ void updateSensors() {
 //    cycleDataPages();
 }
 
-void updateInputs() {
-    const uint8_t keys = g_ledKeyModule.readKeys();
-    const uint8_t newlyPressed = keys & ~g_lastKeyState;
-    g_lastKeyState = keys;
-
-    if (newlyPressed & 0x01) {
-        Serial.println("K1");
-        displayManager.previousPage();
-        displayManager.requestRefresh();
-    }
-    if (newlyPressed & 0x02) {
-        Serial.println("K2");
-        displayManager.nextPage();
-        displayManager.requestRefresh();
-    }
-}
+//void updateInputs() {
+//    const uint8_t keys = g_ledKeyModule.readKeys();
+//    const uint8_t newlyPressed = keys & ~g_lastKeyState;
+//    g_lastKeyState = keys;
+//    Serial.print(newlyPressed);
+//
+//    if (newlyPressed & 0x01) {
+//        displayManager.previousPage();
+//        displayManager.requestRefresh();
+//    }
+//    if (newlyPressed & 0x02) {
+//        displayManager.nextPage();
+//        displayManager.requestRefresh();
+//    }
+//}
 }
 
 void showTransientStatusMessage(const String &message) {
@@ -174,7 +173,7 @@ void setup() {
     pinMode(LIGHTS_PIN, OUTPUT);
     digitalWrite(LIGHTS_PIN, LOW);
 
-    g_ledKeyModule.begin();
+//    g_ledKeyModule.begin();
 
     displayManager.addPage(&startupPage);
     displayManager.addPage(&waterPage);
