@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include <Adafruit_GC9A01A.h>
+#include "Adafruit_GC9A01A.h"
 
 /**
  * Base interface for every drawable page on the GC9A01 display.

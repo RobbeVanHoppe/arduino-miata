@@ -1,4 +1,4 @@
-#include "display/pages/StaticTextPage.h"
+#include "esp32_dash/display/pages/StaticTextPage.h"
 
 #include <utility>
 #include <vector>

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "main.h"
-#include "display/DisplayManager.h"
-#include "display/pages/WaterTempPage.h"
+#include "esp32_dash/display/DisplayManager.h"
+#include "esp32_dash/display/pages/WaterTempPage.h"
 
 class MyServerCallbacks : public BLEServerCallbacks {
 public:

@@ -1,9 +1,9 @@
-#include "sensors/TachSensor.h"
+#include "esp32_dash/sensors/TachSensor.h"
 
 #include <math.h>
 
-#include "display/DisplayManager.h"
-#include "display/pages/TachPage.h"
+#include "esp32_dash/display/DisplayManager.h"
+#include "esp32_dash/display/pages/TachPage.h"
 
 TachSensor *TachSensor::instance_ = nullptr;
 

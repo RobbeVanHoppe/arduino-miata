@@ -1,6 +1,6 @@
 #pragma once
 
-#include "display/DisplayPage.h"
+#include "esp32_dash/display/DisplayPage.h"
 
 class WaterTempPage : public DisplayPage {
 public:

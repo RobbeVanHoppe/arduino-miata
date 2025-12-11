@@ -1,11 +1,11 @@
 #pragma once
 
 #include <Arduino.h>
-#include <Adafruit_GC9A01A.h>
+#include "Adafruit_GC9A01A.h"
 #include <memory>
 #include <vector>
 
-#include "display/DisplayPage.h"
+#include "DisplayPage.h"
 
 struct DisplayConfig {
     int8_t csPin = 5;
@@ -44,7 +44,7 @@ public:
 
     Adafruit_GC9A01A *display();
     bool isReady() const { return _initialized; }
-    size_t currentPageIndex() const { return _currentPage; }
+    uint8_t currentPageIndex() const { return _currentPage; }
 
 private:
     void drawPlaceholder();

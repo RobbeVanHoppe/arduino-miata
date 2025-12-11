@@ -1,4 +1,4 @@
-#include "display/DisplayManager.h"
+#include "esp32_dash/display/DisplayManager.h"
 
 #include <SPI.h>
 

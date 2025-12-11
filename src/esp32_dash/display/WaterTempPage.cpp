@@ -1,4 +1,4 @@
-#include "display/pages/TachPage.h"
+#include "esp32_dash/display/pages/WaterTempPage.h"
 
 namespace {
 constexpr int16_t kSafeMargin = 24;
@@ -62,35 +62,35 @@ void drawCenteredText(Adafruit_GC9A01A &display,
 }
 }
 
-TachPage::TachPage()
-        : _title(F("Tacho")),
-          _rpm(0.0f),
-          _statusMessage(F("Awaiting tach signal")),
+WaterTempPage::WaterTempPage()
+        : _title(F("Water")),
+          _waterTempC(85.0f),
+          _statusMessage(F("")),
           _backgroundColor(0x0000),
           _titleColor(0xFFFF),
-          _rpmColor(0xF800),
+          _tempColor(0x07E0),
           _statusColor(0xFFE0),
           _layoutDirty(true) {}
 
-void TachPage::setTitle(const String &title) {
+void WaterTempPage::setTitle(const String &title) {
     _title = title;
     _layoutDirty = true;
 }
 
-void TachPage::setRpm(float rpm) {
-    _rpm = rpm;
+void WaterTempPage::setWaterTemp(float tempC) {
+    _waterTempC = tempC;
 }
 
-void TachPage::setStatusMessage(const String &status) {
+void WaterTempPage::setStatusMessage(const String &status) {
     _statusMessage = status;
 }
 
-void TachPage::onEnter(Adafruit_GC9A01A &display) {
+void WaterTempPage::onEnter(Adafruit_GC9A01A &display) {
     (void) display;
     _layoutDirty = true;
 }
 
-void TachPage::drawBaseLayout(Adafruit_GC9A01A &display) {
+void WaterTempPage::drawBaseLayout(Adafruit_GC9A01A &display) {
     display.fillScreen(_backgroundColor);
     display.setTextWrap(false);
     display.setTextColor(_titleColor, _backgroundColor);
@@ -98,18 +98,18 @@ void TachPage::drawBaseLayout(Adafruit_GC9A01A &display) {
     _layoutDirty = false;
 }
 
-void TachPage::render(Adafruit_GC9A01A &display) {
+void WaterTempPage::render(Adafruit_GC9A01A &display) {
     if (_layoutDirty) {
         drawBaseLayout(display);
     } else {
         display.setTextWrap(false);
     }
 
-    display.setTextColor(_rpmColor, _backgroundColor);
-    const String rpmText = String(static_cast<int>(_rpm));
-    const int16_t rpmY = (display.height() / 2) - 30;
-    clearTextBand(display, rpmY, 6, _backgroundColor);
-    drawCenteredText(display, rpmText, rpmY, 6);
+    display.setTextColor(_tempColor, _backgroundColor);
+    const String tempText = String(static_cast<int>(_waterTempC)) + F(" C");
+    const int16_t tempY = (display.height() / 2) - 30;
+    clearTextBand(display, tempY, 6, _backgroundColor);
+    drawCenteredText(display, tempText, tempY, 6);
 
     display.setTextColor(_statusColor, _backgroundColor);
     const int16_t statusY = display.height() - kSafeMargin - kStatusYOffset;

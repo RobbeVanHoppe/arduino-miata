@@ -1,9 +1,9 @@
-#include "sensors/WaterSensor.h"
+#include "esp32_dash/sensors/WaterSensor.h"
 
 #include <math.h>
 
-#include "display/DisplayManager.h"
-#include "display/pages/WaterTempPage.h"
+#include "esp32_dash/display/DisplayManager.h"
+#include "esp32_dash/display/pages/WaterTempPage.h"
 
 namespace {
 constexpr WaterSensor::WaterTempPoint kMiataTempCurve[] = {
