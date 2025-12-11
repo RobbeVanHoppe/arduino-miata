@@ -35,6 +35,12 @@ private:
 
 
     bool readWaterTemp(float &outTempC);
+
+#ifdef UNIT_TEST
+public:
+#else
+private:
+#endif
     static float interpolateWaterTemp(float resistance);
     static String describeWaterStatus(float tempC);
 
