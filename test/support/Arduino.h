@@ -4,16 +4,9 @@
 #include <stddef.h>
 #include <string>
 #include <vector>
-#include <limits>
-#include <cmath>
-
-#ifndef NAN
-#define NAN std::numeric_limits<double>::quiet_NaN()
-#endif
 
 using byte = uint8_t;
-
-struct __FlashStringHelper;
+using __FlashStringHelper = char;
 
 #define IRAM_ATTR
 #define F(str_literal) reinterpret_cast<const __FlashStringHelper *>(str_literal)
@@ -62,8 +55,6 @@ private:
 unsigned long millis();
 void setMillis(unsigned long value);
 void advanceMillis(unsigned long delta);
-unsigned long micros();
-void advanceMicros(unsigned long delta);
 
 int analogRead(uint8_t pin);
 void setAnalogReadSequence(const std::vector<int> &values);
@@ -71,20 +62,6 @@ void setAnalogReadSequence(const std::vector<int> &values);
 inline void pinMode(int, int) {}
 inline void delay(unsigned long ms) { advanceMillis(ms); }
 inline void delayMicroseconds(unsigned int) {}
-
-inline int digitalPinToInterrupt(int pin) { return pin; }
-
-constexpr int RISING = 1;
-void attachInterrupt(int interruptNumber, void (*isr)(void), int mode);
-
-using portMUX_TYPE = struct portMUX_TYPE_impl { int dummy; };
-
-#define portMUX_INITIALIZER_UNLOCKED { 0 }
-
-inline void portENTER_CRITICAL(portMUX_TYPE *) {}
-inline void portEXIT_CRITICAL(portMUX_TYPE *) {}
-inline void portENTER_CRITICAL_ISR(portMUX_TYPE *) {}
-inline void portEXIT_CRITICAL_ISR(portMUX_TYPE *) {}
 
 class HardwareSerial {
 public:
