@@ -5,7 +5,7 @@
 #include <memory>
 #include <vector>
 
-#include "DisplayPage.h"
+#include "esp32_dash/display/pages/DisplayPage.h"
 
 struct DisplayConfig {
     int8_t csPin = 5;

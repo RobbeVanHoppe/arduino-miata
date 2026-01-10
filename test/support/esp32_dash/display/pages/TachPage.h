@@ -1,6 +1,6 @@
 #pragma once
 
-#include "esp32_dash/display/DisplayPage.h"
+#include "esp32_dash/display/pages/DisplayPage.h"
 
 class TachPage : public DisplayPage {
 public:
