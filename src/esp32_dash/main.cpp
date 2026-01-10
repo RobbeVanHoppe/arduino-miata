@@ -11,6 +11,7 @@
 #include "esp32_dash/display/pages/WaterTempPage.h"
 #include "esp32_dash/sensors/TachSensor.h"
 #include "esp32_dash/sensors/WaterSensor.h"
+#include "esp32_dash/GPS/gpsHandler.h"
 #include "esp32_dash/TM1638/TM1638LedAndKey.h"
 #include "esp32_dash/myCustomCallbacks.h"
 #include "esp32_dash/myServerCallbacks.h"
@@ -43,6 +44,7 @@ constexpr uint32_t kStatusOverlayDurationMs = 2000;
 namespace {
     constexpr int cNanoRXPin = 33;
     constexpr int cNanoTXPin = 32;
+    constexpr uint32_t kNanoBaud = 9600;
 
     constexpr int kWaterTempPin = 34;
     constexpr int kTachSignalPin = 35;
@@ -70,6 +72,7 @@ namespace {
     uint8_t g_lastTmButtons = 0;
 
     uint32_t g_lastPageSwitch = 0;
+    uint32_t g_lastNanoWarningMs = 0;
     size_t g_currentDataPage = 0;
     bool g_lowPowerMode = false;
 }
@@ -96,6 +99,7 @@ TachSensor tachSensor({
 TM1638LedAndKeyModule tm1638(TM1638_STROBE, TM1638_CLK, TM1638_DATA);
 
 HardwareSerial nanoSerial(2);
+gpsHandler gps;
 
 void updateSensors() {
     waterSensor.update();
@@ -209,7 +213,8 @@ void handleTm1638Buttons() {
 
 void setup() {
     Serial.begin(115200);
-    nanoSerial.begin(115200, SERIAL_8N1, cNanoRXPin, cNanoTXPin);
+    nanoSerial.begin(kNanoBaud, SERIAL_8N1, cNanoRXPin, cNanoTXPin);
+    gps.begin(nanoSerial);
 
     delay(1000);
 
@@ -298,9 +303,33 @@ void loop() {
     handleTm1638Buttons();
     displayManager.loop();
 
-    while (nanoSerial.available()) {
-        char c = nanoSerial.read();
-        Serial.write(c);   // echo everything from Nano to USB serial
+    if (gps.update()) {
+        Serial.print(F("Nano GPS: "));
+        Serial.println(gps.readBuffer());
+        if (gps.hasFix()) {
+            const GpsFix &fix = gps.fix();
+            Serial.print(F("Fix lat="));
+            Serial.print(fix.latitude, 6);
+            Serial.print(F(" lon="));
+            Serial.print(fix.longitude, 6);
+            Serial.print(F(" spd="));
+            Serial.print(fix.speedKmph, 2);
+            Serial.print(F("km/h alt="));
+            Serial.print(fix.altitudeMeters, 1);
+            Serial.print(F("m sats="));
+            Serial.println(fix.satellites);
+        } else if (gps.lastMessageWasNoFix()) {
+            Serial.println(F("No GPS fix"));
+        }
+    }
+    const uint32_t nowMs = millis();
+    if (gps.bytesReceived() == 0 && nowMs - g_lastNanoWarningMs >= 2000) {
+        g_lastNanoWarningMs = nowMs;
+        Serial.print(F("No data on Nano UART2 (RX GPIO"));
+        Serial.print(cNanoRXPin);
+        Serial.print(F(", baud "));
+        Serial.print(kNanoBaud);
+        Serial.println(F("). Check wiring + shared ground."));
     }
     delay(50);
 }
