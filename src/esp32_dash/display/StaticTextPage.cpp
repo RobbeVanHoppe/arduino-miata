@@ -59,15 +59,8 @@ StaticTextPage::StaticTextPage(String title, String body,
                                uint16_t titleColor,
                                uint16_t bodyColor,
                                uint16_t backgroundColor)
-        : _title(std::move(title)),
-          _body(std::move(body)),
-          _titleColor(titleColor),
-          _bodyColor(bodyColor),
-          _backgroundColor(backgroundColor) {}
+        : DisplayPage(F("Info"), 0x0000, 0xFFFF, F("")) {}
 
-void StaticTextPage::setTitle(const String &title) {
-    _title = title;
-}
 
 void StaticTextPage::setBody(const String &body) {
     _body = body;

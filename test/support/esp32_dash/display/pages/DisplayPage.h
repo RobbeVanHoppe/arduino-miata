@@ -8,5 +8,6 @@ public:
     virtual void onEnter(Adafruit_GC9A01A &display) { (void) display; }
     virtual void onExit(Adafruit_GC9A01A &display) { (void) display; }
     virtual void render(Adafruit_GC9A01A &display) = 0;
+    virtual void drawBaseLayout(Adafruit_GC9A01A &display) = 0;
 };
 
