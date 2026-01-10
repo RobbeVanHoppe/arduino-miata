@@ -7,35 +7,6 @@ namespace {
 constexpr int16_t kCircularSafeMargin = 30;
 constexpr int16_t kBodyLineSpacing = 28;
 
-void drawCenteredText(Adafruit_GC9A01A &display,
-                      const String &text,
-                      int16_t y,
-                      uint8_t textSize) {
-    if (text.isEmpty()) {
-        return;
-    }
-
-    int16_t x1, y1;
-    uint16_t w, h;
-    display.setTextSize(textSize);
-    display.getTextBounds(text.c_str(), 0, y, &x1, &y1, &w, &h);
-
-    const int16_t centeredX = (display.width() - static_cast<int16_t>(w)) / 2;
-    int16_t x = centeredX;
-    if (x < kCircularSafeMargin) {
-        x = kCircularSafeMargin;
-    }
-    const int16_t maxX = display.width() - kCircularSafeMargin - static_cast<int16_t>(w);
-    if (maxX < kCircularSafeMargin) {
-        x = kCircularSafeMargin;
-    } else if (x > maxX) {
-        x = maxX;
-    }
-
-    display.setCursor(x, y);
-    display.print(text);
-}
-
 std::vector<String> splitLines(const String &text) {
     std::vector<String> lines;
     int32_t start = 0;
@@ -59,7 +30,8 @@ StaticTextPage::StaticTextPage(String title, String body,
                                uint16_t titleColor,
                                uint16_t bodyColor,
                                uint16_t backgroundColor)
-        : DisplayPage(F("Info"), 0x0000, 0xFFFF, F("")) {}
+        : DisplayPage(std::move(title), 0x0000, 0xFFFF, F("")),
+        _body(std::move(body)) {}
 
 
 void StaticTextPage::setBody(const String &body) {

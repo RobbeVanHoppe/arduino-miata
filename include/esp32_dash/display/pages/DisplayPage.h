@@ -50,7 +50,7 @@ protected:
     String _title;
     String _statusMessage;
     uint16_t _bodyColor;
-    String _body;
+
 
     virtual void drawBaseLayout(Adafruit_GC9A01A &display) {
         display.fillScreen(_backgroundColor);

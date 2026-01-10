@@ -12,4 +12,7 @@ public:
 
     void setBody(const String &body);
     void render(Adafruit_GC9A01A &display) override;
+
+private:
+    String _body;
 };
