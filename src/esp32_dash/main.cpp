@@ -44,6 +44,7 @@ constexpr uint32_t kStatusOverlayDurationMs = 2000;
 namespace {
     constexpr int cNanoRXPin = 33;
     constexpr int cNanoTXPin = 32;
+    constexpr uint32_t kNanoBaud = 9600;
 
     constexpr int kWaterTempPin = 34;
     constexpr int kTachSignalPin = 35;
@@ -71,6 +72,7 @@ namespace {
     uint8_t g_lastTmButtons = 0;
 
     uint32_t g_lastPageSwitch = 0;
+    uint32_t g_lastNanoWarningMs = 0;
     size_t g_currentDataPage = 0;
     bool g_lowPowerMode = false;
 }
@@ -211,7 +213,7 @@ void handleTm1638Buttons() {
 
 void setup() {
     Serial.begin(115200);
-    nanoSerial.begin(115200, SERIAL_8N1, cNanoRXPin, cNanoTXPin);
+    nanoSerial.begin(kNanoBaud, SERIAL_8N1, cNanoRXPin, cNanoTXPin);
     gps.begin(nanoSerial);
 
     delay(1000);
@@ -319,6 +321,15 @@ void loop() {
         } else if (gps.lastMessageWasNoFix()) {
             Serial.println(F("No GPS fix"));
         }
+    }
+    const uint32_t nowMs = millis();
+    if (gps.bytesReceived() == 0 && nowMs - g_lastNanoWarningMs >= 2000) {
+        g_lastNanoWarningMs = nowMs;
+        Serial.print(F("No data on Nano UART2 (RX GPIO"));
+        Serial.print(cNanoRXPin);
+        Serial.print(F(", baud "));
+        Serial.print(kNanoBaud);
+        Serial.println(F("). Check wiring + shared ground."));
     }
     delay(50);
 }

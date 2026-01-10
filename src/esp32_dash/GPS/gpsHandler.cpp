@@ -9,6 +9,8 @@ void gpsHandler::begin(Stream &serial) {
     lastLine_[0] = '\0';
     hasFix_ = false;
     noFix_ = false;
+    lastByteMs_ = 0;
+    bytesReceived_ = 0;
 }
 
 bool gpsHandler::update() {
@@ -19,6 +21,8 @@ bool gpsHandler::update() {
     bool processed = false;
     while (serial_->available()) {
         const char c = static_cast<char>(serial_->read());
+        lastByteMs_ = millis();
+        ++bytesReceived_;
         if (c == '\r') {
             continue;
         }
@@ -83,6 +87,14 @@ void gpsHandler::processLine(const char *line) {
 }
 
 void gpsHandler::sendCommand(char *cmd) {}
+
+uint32_t gpsHandler::lastByteMs() const {
+    return lastByteMs_;
+}
+
+uint32_t gpsHandler::bytesReceived() const {
+    return bytesReceived_;
+}
 
 const char *gpsHandler::readBuffer() const {
     return lastLine_;

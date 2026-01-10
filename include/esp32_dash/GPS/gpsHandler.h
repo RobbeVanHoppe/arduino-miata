@@ -21,6 +21,8 @@ public:
     bool hasFix() const;
     const GpsFix &fix() const;
     bool lastMessageWasNoFix() const;
+    uint32_t lastByteMs() const;
+    uint32_t bytesReceived() const;
 
 private:
     void processLine(const char *line);
@@ -32,4 +34,6 @@ private:
     bool hasFix_ = false;
     bool noFix_ = false;
     GpsFix lastFix_;
+    uint32_t lastByteMs_ = 0;
+    uint32_t bytesReceived_ = 0;
 };
