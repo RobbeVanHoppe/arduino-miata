@@ -16,7 +16,7 @@ class gpsHandler {
 public:
     void begin(Stream &serial);
     bool update();
-    void sendCommand(char *cmd);
+    void sendCommand(const char *cmd);
     const char *readBuffer() const;
     bool hasFix() const;
     const GpsFix &fix() const;
@@ -25,7 +25,15 @@ public:
     uint32_t bytesReceived() const;
 
 private:
-    void processLine(const char *line);
+    enum class ParseResult : uint8_t {
+        Ignored,
+        NoFix,
+        Fix
+    };
+
+    ParseResult processLine(const char *line);
+    ParseResult parseMessageFrame(const char *line);
+    ParseResult parseGpsPayload(const char *payload);
 
     Stream *serial_ = nullptr;
     char buffer_[128] = {0};
