@@ -75,4 +75,43 @@ struct Message {
 
     Message(MessageType type = TYPE_UNKNOWN, MessageNode source = NODE_UNKNOWN, MessageNode destination = NODE_UNKNOWN)
     : type(type), source(source), destination(destination), payload{0}, length(0) {}
+
+    Message(MessageType type, MessageNode source, MessageNode destination, const char *textPayload)
+    : Message(type, source, destination) {
+        setPayload(textPayload);
+    }
+
+    Message(MessageType type, MessageNode source, MessageNode destination, const uint8_t *data, size_t dataLength)
+    : Message(type, source, destination) {
+        setPayload(data, dataLength);
+    }
+
+    void setPayload(const char *textPayload) {
+        if (!textPayload) {
+            clearPayload();
+            return;
+        }
+
+        const size_t copyLength = strnlen(textPayload, MaxPayloadSize - 1);
+        memcpy(payload, textPayload, copyLength);
+        payload[copyLength] = '\0';
+        length = static_cast<uint8_t>(copyLength);
+    }
+
+    void setPayload(const uint8_t *data, size_t dataLength) {
+        if (!data || dataLength == 0) {
+            clearPayload();
+            return;
+        }
+
+        const size_t copyLength = dataLength < (MaxPayloadSize - 1) ? dataLength : (MaxPayloadSize - 1);
+        memcpy(payload, data, copyLength);
+        payload[copyLength] = '\0';
+        length = static_cast<uint8_t>(copyLength);
+    }
+
+    void clearPayload() {
+        payload[0] = '\0';
+        length = 0;
+    }
 };
