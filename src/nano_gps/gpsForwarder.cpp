@@ -7,10 +7,10 @@ void GpsForwarder::begin() {
     Serial.begin(config_.serialBaud);
     espSerial_.begin(config_.espBaud);
 
-    sendMessage(espSerial_, Message(TYPE_INFO, NODE_GPS_ARDUINO, NODE_ESP32, "GPS on HW UART, ESP32 on SoftSerial"))
+    Message startup(TYPE_INFO, NODE_GPS_ARDUINO, NODE_ESP32, "GPS on HW UART, ESP32 on SoftSerial");
+    sendMessage(Serial, startup);
+    sendMessage(espSerial_, startup);
 
-    Serial.println(F("GPS on HW UART, ESP32 on SoftSerial"));
-    espSerial_.println(F("Hello from nano."));
 }
 
 void GpsForwarder::update() {
@@ -64,14 +64,12 @@ void GpsForwarder::sendFix() {
     const double alt  = gps_.altitude.meters();
     const uint32_t sats = gps_.satellites.value();
 
-    Message msg(MessageType::DATA);
-    msg.source = MessageNode::NODE_GPS_ARDUINO;
-    msg.destination = MessageNode::NODE_ESP32;
+    Message msg(TYPE_DATA, NODE_GPS_ARDUINO, NODE_ESP32);
 
-    // Build the CSV payload into the message buffer
-    msg.length = snprintf(
-            msg.payload,
-            Message::MaxPayloadSize,
+    char csvPayload[Message::MaxPayloadSize] = {0};
+    const int written = snprintf(
+            csvPayload,
+            sizeof(csvPayload),
             "GPS,%.6f,%.6f,%.2f,%.1f,%lu",
             lat,
             lon,
@@ -80,9 +78,10 @@ void GpsForwarder::sendFix() {
             static_cast<unsigned long>(sats)
     );
 
-    if (msg.length >= Message::MaxPayloadSize) {
-        // truncated – optional: handle error, cap length
-        msg.length = Message::MaxPayloadSize - 1;
+    if (written > 0) {
+        msg.setPayload(csvPayload);
+    } else {
+        msg.clearPayload();
     }
 
     // Send to both outputs using the same standard format
