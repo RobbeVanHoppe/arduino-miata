@@ -21,7 +21,6 @@ public:
     void update();
 
 private:
-    const char* messageTypeToString(MessageType t);
     void sendMessage(Stream& out, const Message& msg);
     void readGpsFromHardware();
     void sendFix();

@@ -3,6 +3,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "common/message.h"
+
 void gpsHandler::begin(Stream &serial) {
     serial_ = &serial;
     bufferLength_ = 0;
@@ -62,11 +64,39 @@ void gpsHandler::processLine(const char *line) {
     }
 
     const char *payload = line + 5;
-    if (strncmp(payload, "GPS,", 4) != 0) {
+    const char *csv = payload;
+
+    const char *firstColon = strchr(payload, ':');
+    const char *routeSep = strchr(payload, '>');
+    if (firstColon && routeSep && routeSep < firstColon) {
+        const size_t srcLen = static_cast<size_t>(routeSep - payload);
+        const size_t dstLen = static_cast<size_t>(firstColon - routeSep - 1);
+
+        char srcNode[6] = {0};
+        char dstNode[6] = {0};
+
+        if (srcLen > 0 && srcLen < sizeof(srcNode) && dstLen > 0 && dstLen < sizeof(dstNode)) {
+            memcpy(srcNode, payload, srcLen);
+            memcpy(dstNode, routeSep + 1, dstLen);
+
+            const MessageNode source = parseMessageNode(srcNode);
+            const MessageNode destination = parseMessageNode(dstNode);
+            if (source != MessageNode::NODE_GPS_ARDUINO) {
+                return;
+            }
+            if (destination != MessageNode::NODE_ESP32 && destination != MessageNode::NODE_UNKNOWN) {
+                return;
+            }
+
+            csv = firstColon + 1;
+        }
+    }
+
+    if (strncmp(csv, "GPS,", 4) != 0) {
         return;
     }
 
-    const char *csv = payload + 4;
+    csv += 4;
     double lat = 0.0;
     double lon = 0.0;
     float spd = 0.0f;
