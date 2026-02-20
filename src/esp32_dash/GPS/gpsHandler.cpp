@@ -5,12 +5,19 @@
 
 #include "common/message.h"
 
+namespace {
+    bool startsWith(const char *text, const char *prefix) {
+        return text && prefix && strncmp(text, prefix, strlen(prefix)) == 0;
+    }
+}
+
 void gpsHandler::begin(Stream &serial) {
     serial_ = &serial;
     bufferLength_ = 0;
     lastLine_[0] = '\0';
     hasFix_ = false;
     noFix_ = false;
+    lastFix_ = {};
     lastByteMs_ = 0;
     bytesReceived_ = 0;
 }
@@ -20,103 +27,148 @@ bool gpsHandler::update() {
         return false;
     }
 
-    bool processed = false;
+    bool parsedFrame = false;
+
     while (serial_->available()) {
-        const char c = static_cast<char>(serial_->read());
+        const char incoming = static_cast<char>(serial_->read());
         lastByteMs_ = millis();
         ++bytesReceived_;
-        if (c == '\r') {
+
+        if (incoming == '\r') {
             continue;
         }
-        if (c == '\n') {
+
+        if (incoming == '\n') {
             buffer_[bufferLength_] = '\0';
             strncpy(lastLine_, buffer_, sizeof(lastLine_) - 1);
             lastLine_[sizeof(lastLine_) - 1] = '\0';
-            processLine(buffer_);
+
+            const ParseResult result = processLine(buffer_);
+            parsedFrame = parsedFrame || (result != ParseResult::Ignored);
+
             bufferLength_ = 0;
-            processed = true;
             continue;
         }
 
         if (bufferLength_ < sizeof(buffer_) - 1) {
-            buffer_[bufferLength_++] = c;
+            buffer_[bufferLength_++] = incoming;
         } else {
+            // overflow: drop partial line and wait for next newline
             bufferLength_ = 0;
         }
     }
 
-    return processed;
+    return parsedFrame;
 }
 
-void gpsHandler::processLine(const char *line) {
+gpsHandler::ParseResult gpsHandler::processLine(const char *line) {
     if (!line || line[0] == '\0') {
-        return;
+        return ParseResult::Ignored;
     }
 
     if (strcmp(line, "NOFIX") == 0) {
         noFix_ = true;
         hasFix_ = false;
-        return;
+        lastFix_.valid = false;
+        return ParseResult::NoFix;
     }
 
-    if (strncmp(line, "DATA:", 5) != 0) {
-        return;
-    }
-
-    const char *payload = line + 5;
-    const char *csv = payload;
-
-    const char *firstColon = strchr(payload, ':');
-    const char *routeSep = strchr(payload, '>');
-    if (firstColon && routeSep && routeSep < firstColon) {
-        const size_t srcLen = static_cast<size_t>(routeSep - payload);
-        const size_t dstLen = static_cast<size_t>(firstColon - routeSep - 1);
-
-        char srcNode[6] = {0};
-        char dstNode[6] = {0};
-
-        if (srcLen > 0 && srcLen < sizeof(srcNode) && dstLen > 0 && dstLen < sizeof(dstNode)) {
-            memcpy(srcNode, payload, srcLen);
-            memcpy(dstNode, routeSep + 1, dstLen);
-
-            const MessageNode source = parseMessageNode(srcNode);
-            const MessageNode destination = parseMessageNode(dstNode);
-            if (source != MessageNode::NODE_GPS_ARDUINO) {
-                return;
-            }
-            if (destination != MessageNode::NODE_ESP32 && destination != MessageNode::NODE_UNKNOWN) {
-                return;
-            }
-
-            csv = firstColon + 1;
-        }
-    }
-
-    if (strncmp(csv, "GPS,", 4) != 0) {
-        return;
-    }
-
-    csv += 4;
-    double lat = 0.0;
-    double lon = 0.0;
-    float spd = 0.0f;
-    float alt = 0.0f;
-    unsigned long sats = 0;
-
-    if (sscanf(csv, "%lf,%lf,%f,%f,%lu", &lat, &lon, &spd, &alt, &sats) == 5) {
-        lastFix_.latitude = lat;
-        lastFix_.longitude = lon;
-        lastFix_.speedKmph = spd;
-        lastFix_.altitudeMeters = alt;
-        lastFix_.satellites = static_cast<uint32_t>(sats);
-        lastFix_.valid = true;
-        lastFix_.lastUpdateMs = millis();
-        hasFix_ = true;
-        noFix_ = false;
-    }
+    return parseMessageFrame(line);
 }
 
-void gpsHandler::sendCommand(char *cmd) {}
+gpsHandler::ParseResult gpsHandler::parseMessageFrame(const char *line) {
+    // protocol: TYPE:SRC>DST:payload
+    const char *firstColon = strchr(line, ':');
+    if (!firstColon) {
+        return ParseResult::Ignored;
+    }
+
+    const size_t typeLength = static_cast<size_t>(firstColon - line);
+    if (typeLength == 0 || typeLength >= 8) {
+        return ParseResult::Ignored;
+    }
+
+    char typeBuffer[8] = {0};
+    memcpy(typeBuffer, line, typeLength);
+
+    if (strcmp(typeBuffer, messageTypeToString(MessageType::TYPE_DATA)) != 0) {
+        return ParseResult::Ignored;
+    }
+
+    const char *routingStart = firstColon + 1;
+    const char *routeSeparator = strchr(routingStart, '>');
+    if (!routeSeparator) {
+        return ParseResult::Ignored;
+    }
+
+    const char *secondColon = strchr(routeSeparator, ':');
+    if (!secondColon) {
+        return ParseResult::Ignored;
+    }
+
+    const size_t srcLength = static_cast<size_t>(routeSeparator - routingStart);
+    const size_t dstLength = static_cast<size_t>(secondColon - routeSeparator - 1);
+    if (srcLength == 0 || srcLength >= 6 || dstLength == 0 || dstLength >= 6) {
+        return ParseResult::Ignored;
+    }
+
+    char srcNodeRaw[6] = {0};
+    char dstNodeRaw[6] = {0};
+    memcpy(srcNodeRaw, routingStart, srcLength);
+    memcpy(dstNodeRaw, routeSeparator + 1, dstLength);
+
+    const MessageNode source = parseMessageNode(srcNodeRaw);
+    const MessageNode destination = parseMessageNode(dstNodeRaw);
+
+    if (source != MessageNode::NODE_GPS_ARDUINO) {
+        return ParseResult::Ignored;
+    }
+
+    if (destination != MessageNode::NODE_ESP32 && destination != MessageNode::NODE_UNKNOWN) {
+        return ParseResult::Ignored;
+    }
+
+    const char *payload = secondColon + 1;
+    return parseGpsPayload(payload);
+}
+
+gpsHandler::ParseResult gpsHandler::parseGpsPayload(const char *payload) {
+    // payload from sender: GPS,lat,lon,speed_kmph,alt_m,sats
+    if (!startsWith(payload, "GPS,")) {
+        return ParseResult::Ignored;
+    }
+
+    double latitude = 0.0;
+    double longitude = 0.0;
+    float speedKmph = 0.0f;
+    float altitudeMeters = 0.0f;
+    unsigned long satellites = 0;
+
+    if (sscanf(payload + 4, "%lf,%lf,%f,%f,%lu", &latitude, &longitude, &speedKmph, &altitudeMeters, &satellites) != 5) {
+        return ParseResult::Ignored;
+    }
+
+    lastFix_.latitude = latitude;
+    lastFix_.longitude = longitude;
+    lastFix_.speedKmph = speedKmph;
+    lastFix_.altitudeMeters = altitudeMeters;
+    lastFix_.satellites = static_cast<uint32_t>(satellites);
+    lastFix_.lastUpdateMs = millis();
+    lastFix_.valid = true;
+
+    hasFix_ = true;
+    noFix_ = false;
+
+    return ParseResult::Fix;
+}
+
+void gpsHandler::sendCommand(const char *cmd) {
+    if (!serial_ || !cmd || cmd[0] == '\0') {
+        return;
+    }
+
+    serial_->println(cmd);
+}
 
 uint32_t gpsHandler::lastByteMs() const {
     return lastByteMs_;
