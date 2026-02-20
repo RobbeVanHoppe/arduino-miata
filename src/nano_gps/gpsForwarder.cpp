@@ -1,4 +1,4 @@
-#include "nano_gps/GpsForwarder.h"
+#include "nano_gps/gpsForwarder.h"
 
 GpsForwarder::GpsForwarder(const GpsForwarderConfig &config)
         : config_(config), espSerial_(config.espRxPin, config.espTxPin) {}
@@ -41,18 +41,13 @@ void GpsForwarder::sendNoFix() {
     espSerial_.println(F("NOFIX"));
 }
 
-const char* GpsForwarder::messageTypeToString(MessageType t) {
-    switch (t) {
-        case MessageType::DATA:  return "DATA";
-        case MessageType::ERROR: return "ERROR";
-        case MessageType::PING:  return "PING";
-    }
-    return "UNKNOWN";
-}
-
 void GpsForwarder::sendMessage(Stream& out, const Message& msg) {
-    // Simple text protocol: TYPE:payload\n
+    // Simple text protocol: TYPE:SRC>DST:payload\\n
     out.print(messageTypeToString(msg.type));
+    out.print(':');
+    out.print(messageNodeToString(msg.source));
+    out.print('>');
+    out.print(messageNodeToString(msg.destination));
     out.print(':');
     out.write(msg.payload, msg.length);
     out.println();
@@ -68,6 +63,8 @@ void GpsForwarder::sendFix() {
     const uint32_t sats = gps_.satellites.value();
 
     Message msg(MessageType::DATA);
+    msg.source = MessageNode::NODE_GPS_ARDUINO;
+    msg.destination = MessageNode::NODE_ESP32;
 
     // Build the CSV payload into the message buffer
     msg.length = snprintf(
