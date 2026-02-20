@@ -5,9 +5,11 @@
 #include <string.h>
 
 enum MessageType : uint8_t {
-    DATA,
-    ERROR,
-    PING
+    TYPE_DATA,
+    TYPE_ERROR,
+    TYPE_INFO,
+    TYPE_PING,
+    TYPE_UNKNOWN
 };
 
 enum MessageNode : uint8_t {
@@ -20,9 +22,11 @@ enum MessageNode : uint8_t {
 
 inline const char *messageTypeToString(MessageType type) {
     switch (type) {
-        case MessageType::DATA: return "DATA";
-        case MessageType::ERROR: return "ERROR";
-        case MessageType::PING: return "PING";
+        case MessageType::TYPE_DATA: return "DATA";
+        case MessageType::TYPE_INFO: return "INFO";
+        case MessageType::TYPE_ERROR: return "ERROR";
+        case MessageType::TYPE_PING: return "PING";
+        case MessageType::TYPE_UNKNOWN: return "UNKNOWN";
     }
     return "UNKNOWN";
 }
@@ -69,6 +73,6 @@ struct Message {
     char payload[MaxPayloadSize];
     uint8_t length;  // how many bytes in payload are actually used
 
-    Message(MessageType t)
-    : type(t), source(MessageNode::NODE_UNKNOWN), destination(MessageNode::NODE_UNKNOWN), payload{0}, length(0) {}
+    Message(MessageType type = TYPE_UNKNOWN, MessageNode source = NODE_UNKNOWN, MessageNode destination = NODE_UNKNOWN)
+    : type(type), source(source), destination(destination), payload{0}, length(0) {}
 };

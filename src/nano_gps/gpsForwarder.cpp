@@ -7,6 +7,8 @@ void GpsForwarder::begin() {
     Serial.begin(config_.serialBaud);
     espSerial_.begin(config_.espBaud);
 
+    sendMessage(espSerial_, Message(TYPE_INFO, NODE_GPS_ARDUINO, NODE_ESP32, "GPS on HW UART, ESP32 on SoftSerial"))
+
     Serial.println(F("GPS on HW UART, ESP32 on SoftSerial"));
     espSerial_.println(F("Hello from nano."));
 }
