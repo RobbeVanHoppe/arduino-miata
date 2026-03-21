@@ -1,8 +1,4 @@
-#include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEServer.h>
-
-#include "esp32_dash/main.h"
+#include "../../../miata-dash/include/main.h"
 #include <math.h>
 
 #include "esp32_dash/display/DisplayManager.h"
@@ -42,7 +38,7 @@ TachPage tachPage;
 constexpr uint32_t kStatusOverlayDurationMs = 2000;
 
 namespace {
-    constexpr int cNanoRXPin = 33;
+    constexpr int cNanoRXPin = 33; // The 33 pin on esp32 leads to the RX on the nano (6)
     constexpr int cNanoTXPin = 32;
     constexpr uint32_t kNanoBaud = 9600;
 

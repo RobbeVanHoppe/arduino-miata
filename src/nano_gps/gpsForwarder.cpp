@@ -21,6 +21,7 @@ void GpsForwarder::update() {
     }
 
     if (gps_.location.isValid()) {
+
         sendFix();
     } else {
         sendNoFix();
@@ -28,8 +29,12 @@ void GpsForwarder::update() {
 }
 
 void GpsForwarder::readGpsFromHardware() {
+    sendMessage(Serial, Message(TYPE_DEBUG, NODE_GPS_ARDUINO, NODE_GPS_ARDUINO, "Test"));
     while (Serial.available()) {
-        gps_.encode(Serial.read());
+        char result = Serial.read();
+//        sendMessage(Serial, Message(TYPE_DEBUG, NODE_GPS_ARDUINO, NODE_GPS_ARDUINO, "Test"));
+
+        gps_.encode(result);
     }
 }
 

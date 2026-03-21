@@ -9,6 +9,7 @@ enum MessageType : uint8_t {
     TYPE_ERROR,
     TYPE_INFO,
     TYPE_PING,
+    TYPE_DEBUG,
     TYPE_UNKNOWN
 };
 
@@ -26,6 +27,7 @@ inline const char *messageTypeToString(MessageType type) {
         case MessageType::TYPE_INFO: return "INFO";
         case MessageType::TYPE_ERROR: return "ERROR";
         case MessageType::TYPE_PING: return "PING";
+        case MessageType::TYPE_DEBUG: return "DEBUG";
         case MessageType::TYPE_UNKNOWN: return "UNKNOWN";
     }
     return "UNKNOWN";
